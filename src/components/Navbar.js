@@ -1,105 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom'; // Importing useLocation hook
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaTachometerAlt, FaUsers, FaTree, FaInfoCircle, FaSignOutAlt, FaDollarSign } from 'react-icons/fa';
 import './Navbar.css';
 
 const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false); // State to toggle menu
-  const [scrollingDown, setScrollingDown] = useState(false); // State to check if scrolling down
-  const [prevScrollPos, setPrevScrollPos] = useState(0); // Store the previous scroll position
-  const location = useLocation(); // useLocation hook to get the current location
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrollingDown, setScrollingDown] = useState(false);
+  const [prevScrollPos, setPrevScrollPos] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate(); // Use useNavigate for programmatic navigation
 
-  // Function to handle scroll events
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem('userToken'); // Example: Remove user session
+    sessionStorage.clear(); // Clear session data
+    navigate('/logout'); // Redirect to logout page
+  };
+
+  // Handle scrolling
   const handleScroll = () => {
-    const currentScrollPos = window.pageYOffset; // Get current scroll position
-    if (currentScrollPos > prevScrollPos) {
-      setScrollingDown(true); // Scrolling down
-    } else {
-      setScrollingDown(false); // Scrolling up
-    }
-    setPrevScrollPos(currentScrollPos); // Update previous scroll position
+    const currentScrollPos = window.pageYOffset;
+    setScrollingDown(currentScrollPos > prevScrollPos);
+    setPrevScrollPos(currentScrollPos);
   };
 
-  // Adding event listener for scroll event when component mounts
+  // Handle logout when the tab is closed
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('beforeunload', handleLogout);
 
-    // Cleanup function to remove event listener when component unmounts
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('beforeunload', handleLogout);
     };
-  }, [prevScrollPos]);
+  }, []);
 
-  // Toggle menu function
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
-
-  // Check if current page is Home
-  const isHomePage = location.pathname === '/'; // Home page check
-
-  // Don't show navbar on Home page
-  if (isHomePage) {
-    return null; // Return null to hide the navbar on home page
-  }
+  // Hide navbar on Home page
+  if (location.pathname === '/') return null;
 
   return (
     <nav className={`navbar ${scrollingDown ? 'hide' : ''}`}>
       <div className="navbar-container">
         {/* Logo */}
         <div className="logo">
-        <a href="https://vibechain.pro/#" className="flex items-center">
-              <img
-                src="assets/RiseBNB_files/logo.png"
-                className="h-14"
-                alt="RiseBNB Logo"
-              />
-             
-            </a>       
-             </div>
+          <a href="https://vibechain.vercel.app/" className="flex items-center">
+            <img src="assets/RiseBNB_files/logo.png" className="h-14" alt="RiseBNB Logo" />
+          </a>
+        </div>
 
-        {/* Hamburger Menu Icon (Only for mobile) */}
-        <div className="menu-icon" onClick={toggleMenu}>
+        {/* Hamburger Menu Icon */}
+        <div className="menu-icon" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <FaTimes /> : <FaBars />}
         </div>
 
-        {/* Menu links */}
+        {/* Navigation Links */}
         <ul className={menuOpen ? 'nav-links active' : 'nav-links'}>
-          <li>
-            <Link to="/dashboard" className="nav-link" onClick={toggleMenu}>
-              <FaTachometerAlt className="nav-icon" /> Dashboard
-            </Link>
-          </li>
-          <li>
-            <Link to="/myteam" className="nav-link" onClick={toggleMenu}>
-              <FaUsers className="nav-icon" /> My Team
-            </Link>
-          </li>
-          <li>
-            <Link to="/communitytree" className="nav-link" onClick={toggleMenu}>
-              <FaTree className="nav-icon" /> Community Tree
-            </Link>
-          </li>
-          <li>
-            <Link to="/communityinfo" className="nav-link" onClick={toggleMenu}>
-              <FaInfoCircle className="nav-icon" /> Community Info
-            </Link>
-          </li>
-          <li>
-            <Link to="/recentincome" className="nav-link" onClick={toggleMenu}>
-              <FaTachometerAlt className="nav-icon" /> Recent Income
-            </Link>
-          </li>
-          <li>
-            <Link to="/flashout" className="nav-link" onClick={toggleMenu}>
-              <FaDollarSign className="nav-icon" /> Claim Income
-            </Link>
-          </li>
-          <li>
-            <Link to="/logout" className="nav-link" onClick={toggleMenu}>
-              <FaSignOutAlt className="nav-icon" /> Logout
-            </Link>
-          </li>
+          <li><Link to="/dashboard" className="nav-link"><FaTachometerAlt /> Dashboard</Link></li>
+          <li><Link to="/myteam" className="nav-link"><FaUsers /> My Team</Link></li>
+          <li><Link to="/communitytree" className="nav-link"><FaTree /> Community Tree</Link></li>
+          <li><Link to="/communityinfo" className="nav-link"><FaInfoCircle /> Community Info</Link></li>
+          <li><Link to="/recentincome" className="nav-link"><FaTachometerAlt /> Recent Income</Link></li>
+          <li><Link to="/flashout" className="nav-link"><FaDollarSign /> Claim Income</Link></li>
+          <li><button className="nav-link logout-btn" onClick={handleLogout}><FaSignOutAlt /> Logout</button></li>
         </ul>
       </div>
     </nav>

@@ -117,17 +117,24 @@ const Dashboard = () => {
         }
     };
 
-
     const checkUserRegistration = async (wallet) => {
       try {
           const provider = new BrowserProvider(window.ethereum);
           const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
           const userId = await contract.id(wallet);
+  
           if (userId > 0) {
               setIsRegistered(true);
           } else {
+              let refId = localStorage.getItem("referrerId"); // Get stored referral ID
+              
+              if (!refId || isNaN(refId) || Number(refId) <= 0) {
+                  alert("❌ Not a valid referral link! Please use a valid referral.");
+                  return; // ❌ Stop execution if invalid referrer
+              }
+  
               setIsRegistered(false);
-              setShowRegisterPopup(true); // 🟣 popup show
+              setShowRegisterPopup(true); // 🟣 Show popup for valid referral only
           }
       } catch (error) {
           console.error("Error checking registration", error);
@@ -136,18 +143,26 @@ const Dashboard = () => {
   
   const handleRegister = async () => {
     if (!walletAddress) return alert("Connect wallet first!");
+
+    let refId = localStorage.getItem("referrerId");
+
+    if (!refId || isNaN(refId) || Number(refId) <= 0) {
+        alert("❌ Not a valid referral link! Registration denied.");
+        return;
+    }
+
+    refId = window.BigInt(refId); // Convert to BigInt
+
     setLoading(true);
-    
+
     try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer); // ✅ Use signer
 
         const userAddress = await signer.getAddress();
-        const balance = await provider.getBalance(userAddress); // Get wallet balance
-
-        const refId = window.BigInt(localStorage.getItem("referrerId") || "1");
-        const valueInWei = ethers.parseEther("0.0044");  // ✅ No need to convert to BigInt manually
+        const balance = await provider.getBalance(userAddress);
+        const valueInWei = ethers.parseEther("0.0044"); // ✅ Correctly formatted value
 
         console.log("User Balance:", ethers.formatEther(balance), "BNB");
         console.log("Value in Wei Required:", valueInWei.toString());
@@ -162,7 +177,7 @@ const Dashboard = () => {
         console.log("Contract Address:", CONTRACT_ADDRESS);
         console.log("Signer Address:", userAddress);
 
-        // ✅ Directly pass `valueInWei` as value
+        // ✅ Fix: Ensure `refId` is correctly passed and `value` is properly formatted
         const tx = await contract.register(refId, { value: valueInWei });
 
         await tx.wait();
@@ -177,6 +192,8 @@ const Dashboard = () => {
         setLoading(false);
     }
 };
+
+  
 
 const toggleLevel = (index) => {
   if (index < rank) return; // Prevent selecting already activated levels
@@ -623,7 +640,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
           shadow-md border-2 text-center
           ${isCurrentOrBelow
             ? "bg-gray-500 text-gray-300 border-gray-600 cursor-not-allowed"
-            : isSelected
+            : isSelected  
             ? "bg-yellow-500 text-black font-bold border-yellow-600 scale-105 shadow-yellow-600"
             : isNextInSequence
             ? "bg-gray-800 text-yellow-300 hover:bg-yellow-500 hover:text-black hover:border-yellow-600"
