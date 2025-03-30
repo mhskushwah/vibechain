@@ -3,6 +3,8 @@ import { BrowserProvider, ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
 import { CheckCircle, ArrowUpCircle, Lock} from "lucide-react";
 import { motion } from "framer-motion";
+import { FaLink, FaCopy, FaCheckCircle } from "react-icons/fa";
+
 
 
 const LEVELS = [
@@ -467,154 +469,82 @@ Learn how to configure a non-root public URL by running `npm run build`.
           </div>
         </div>
         <div /> 
+        <br></br>
+        <br></br>
        
 
-       
 
-        <div className="flex justify-center px-4 md:p-0 mt-6">
-          <div className="md:w-3/4 w-full">
+      
+
+
+
+
            
-            <div className="mt-4 p-4 rounded-xl flex justify-between items-center bg-yellow-700 bg-opacity-35">
-              
-              <p className="text-yellow-500"><br></br>Total Income</p>
-              <p className="text-yellow-500"><br></br>{totalIncome} BNB</p>
-            </div>
-            <div className="mt-5">  
-              
-              <div className="w-full transition-colors duration-1000 flex flex-col items-start bg-opacity-40 dark:bg-opacity-40 bg-white dark:bg-[#1e2026] shadow-lg p-3 rounded-sm">
-                <div className="flex w-full flex-col items-start font-mono  rounded-sm text-white text-sm font-semibold whitespace-nowrap max-w-full overflow-x-auto">
-                  <span className="text-sm text-black bg-gray-200 py-1 px-2">
-                  {walletAddress || 'Not connected'}
-                  </span>
-                  <div className="py-2 px-2 mt-2 rounded-sm bg-blue-500 text-white">
-                    My Wallet Fund:
-                    <span className="bg-gray-200 text-black py-[6px] px-2">
-                    {walletBalance} BNB
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-start">
-                  <div className="flex flex-col items-start">
-                    <span className="flex justify-center items-center text-sm font-medium mt-3">
-                      User ID
-                    </span>
-                    <span className="flex justify-center items-center text-sm font-medium mt-3">
-                      Rank
-                    </span>
-                    <span className="flex justify-center items-center text-sm font-medium mt-3">
-                      Activation Date
-                    </span>
-                    <span className="flex justify-center items-center text-sm font-medium mt-3">
-                      Referred By
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-start ml-3">
-                    <span className="bg-gray-200 mt-3 text-sm font-medium rounded-xl px-3 text-gray-800">
-
-                      <span>   
-                      {userId?.toString()}                           
-                                   </span>
-                     
-           </span>
-                    <span className="bg-gray-200 mt-3 text-sm font-medium rounded-xl px-3 text-gray-800">
-                      <span>          {rank}
-                      </span>
-                    </span>
-                    <span className="bg-gray-200 mt-3 text-sm font-medium rounded-xl px-3 text-gray-800">
-                    {new Date(startTime * 1000).toLocaleString()}
-                    </span>
-                    <span className="bg-gray-200 mt-3 text-sm font-medium rounded-xl px-3 text-gray-800">
-                      <span> {referrerId}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
        
-        <div className="flex flex-col items-center px-4 md:p-0 mt-6">
-        <div className="flex justify-center px-4 md:p-0 mt-6">
-          <div className="md:w-3/4 w-full">
-            <div className="w-full flex justify-between items-center bg-whtie dark:bg-[#1e2026] dark:bg-opacity-40 rounded-lg shadow-lg p-4">
-              <div className="overflow-x-auto overflow-y-hidden">
-                <h1 className="text-lg font-bold mb-4 text-white">
-                  Referral Link
-                </h1>
-                <div className="flex justify-between items-center text-2xl">
-                <span
-                className="max-w-full cursor-pointer text-sm font-medium overflow-x-auto bg-blue-500 rounded-sm px-3 py-2 text-white whitespace-nowrap"
-                onClick={handleCopy}
-            >
-                {referralLink}
-            </span>
-
-            {/* ✅ Copied Text */}
-            {copied && (
-                <div className="absolute -top-8 left-0 bg-green-500 text-white text-xs px-2 py-1 rounded">
-                    Copied!
+        <div className="flex flex-col items-center px-4 md:px-8 lg:px-16 py-6 bg-black min-h-screen text-white">
+            {/* Wallet Section */}
+            <div className="mt-6 w-full max-w-2xl bg-gray-900 text-yellow-300 p-6 rounded-lg shadow-lg">
+                <div className="text-center text-sm bg-gray-800 p-2 rounded-md">
+                    {walletAddress || "Not connected"}
+                </div>
+                <div className="mt-4 bg-yellow-500 text-black font-bold py-3 px-6 text-center rounded-md shadow-md">
+                    My Wallet Fund: {walletBalance} BNB
+                </div>
+                
+                {/* User Info */}
+                <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+                    <div className="font-semibold">User ID:</div>
+                    <div className="bg-gray-800 py-1 px-3 rounded-md">{userId?.toString()}</div>
+                    <div className="font-semibold">Rank:</div>
+                    <div className="bg-gray-800 py-1 px-3 rounded-md">{rank}</div>
+                    <div className="font-semibold">Activation Date:</div>
+                    <div className="bg-gray-800 py-1 px-3 rounded-md">{new Date(startTime * 1000).toLocaleString()}</div>
+                    <div className="font-semibold">Referred By:</div>
+                    <div className="bg-gray-800 py-1 px-3 rounded-md">{referrerId}</div>
+                </div>
+            </div>
+            
+            {/* Referral Section */}
+            <div className="flex flex-col items-center mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-lg shadow-lg">
+                <h1 className="text-lg font-bold mb-4 text-yellow-400">Referral Link</h1>
+                <div className="flex justify-between items-center bg-gray-800 p-3 rounded-md w-full">
+                    <span className="text-sm cursor-pointer bg-yellow-500 rounded-sm px-5 py-2 text-black" onClick={handleCopy}>
+                        {referralLink}
+                    </span>
+                    {copied && (
+                        <span className="text-xs text-green-400 ml-2">Copied!</span>
+                    )}
+                </div>
+            </div>
+            
+            {/* Registration Popup */}
+            {showRegisterPopup && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                    <div className="bg-gray-900 p-6 rounded-xl shadow-lg w-[90%] max-w-sm text-white">
+                        <h2 className="text-xl font-semibold text-center text-yellow-400">Registration</h2>
+                        <p className="text-gray-300 text-sm text-center mb-2">You need to register with 0.0044 BNB + Gas Fee</p>
+                        <p className="text-center mb-4">Referrer ID: {ref}</p>
+                        <button
+                            onClick={handleRegister}
+                            disabled={loading}
+                            className="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600 mb-2"
+                        >
+                            {loading ? "Registering..." : "Register Now"}
+                        </button>
+                        <button
+                            onClick={() => setShowRegisterPopup(false)}
+                            className="bg-red-500 text-white w-full py-2 rounded hover:bg-red-600"
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             )}
-                  <span
-                    role="img"
-                    aria-label="copy"
-                    tabIndex={-1}
-                    className="anticon anticon-copy ml-2 cursor-pointer"
-                  >
-                    <svg
-                      viewBox="64 64 896 896"
-                      focusable="false"
-                      data-icon="copy"
-                      width="1em"
-                      height="1em"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32zM704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM382 896h-.2L232 746.2v-.2h150v150z" />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-        
-
-{/* ✅ Registration Popup */}
-{showRegisterPopup && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-xl shadow-lg w-[90%] max-w-sm absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <h2 className="text-xl font-semibold text-center">Registration</h2>
-            <p className="text-gray-600 text-sm text-center mb-2">You need to register with 0.0044 BNB + Gas Fee</p>
-            <p className="text-center mb-4">Referrer ID: {ref}</p>
-
-            <button
-                onClick={handleRegister}
-                disabled={loading}
-                className="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600 mb-2"
-            >
-                {loading ? "Registering..." : "Register Now"}
-            </button>
-
-            <button
-                onClick={() => setShowRegisterPopup(false)} // Close popup on cancel
-                className="bg-red-500 text-white w-full py-2 rounded hover:bg-red-600"
-            >
-                Cancel
-            </button>
-        </div>
-    </div>
-)}
 
 
 
-
-
-
-
-
-<div className="p-4 md:p-8 flex flex-col items-center bg-black min-h-screen text-white">
+        <div className="p-4 md:p-8 flex flex-col items-center bg-black min-h-screen text-white">
   {/* Title */}
   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-yellow-400 mb-6 tracking-widest text-center">
     🚀 PACKAGES
@@ -637,7 +567,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
           whileTap={isNextInSequence && !isCurrentOrBelow ? { scale: 0.95 } : {}}
           disabled={isCurrentOrBelow || (!isNextInSequence && !isSelected)}
           className={`px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex flex-col items-center text-xs sm:text-sm md:text-base rounded-full transition-all duration-300 ease-in-out 
-          shadow-md border-2 text-center
+          shadow-md border-2 text-center font-extrabold transform hover:scale-105 active:scale-95
           ${isCurrentOrBelow
             ? "bg-gray-500 text-gray-300 border-gray-600 cursor-not-allowed"
             : isSelected  
@@ -685,101 +615,34 @@ Learn how to configure a non-root public URL by running `npm run build`.
 
 
 
-        </div>
-        
-        <div className="flex justify-center px-4 md:p-0 mt-6">
-          <div className="md:w-3/4 w-full" />
-        </div>
-        <div className="flex justify-center px-4 md:p-0 mt-8">
-          <div className="md:w-3/4 w-full" />
-        </div>
-        <div className="flex justify-center px-4 md:p-0 mt-8">
-          <div className="md:w-3/4 w-full">
-            <div className="flex flex-col md:flex-row justify-between text-white">
-              <div className="flex justify-between w-full md:w-1/2 bg-[#1e2026] bg-opacity-40 p-4 shadow-lg rounded-sm font-bold text-lg">
+        <div className="flex flex-wrap justify-center gap-6 mt-6 px-4">
+    {[
+        { title: "Total Income", value: totalIncome, icon: "bnb.png" },
+        { title: "Total Deposit", value: totalDeposit, icon: "bnb.png" },
+        { title: "Direct Referrals", value: directTeam, icon: "leader.png" },
+        { title: "My Community Size", value: totalMatrixTeam, icon: "matrix.png" },
+        { title: "Direct Income", value: directReferralIncome, icon: "bnb.png" },
+        { title: "Referral Income", value: referralIncome, icon: "bnb.png" },
+        { title: "Upgrade Income", value: levelIncome, icon: "bnb.png" },
+    ].map((item, index) => (
+        <div key={index} className="bg-gray-900 bg-opacity-50 p-6 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 rounded-xl shadow-lg border border-gray-800 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-lg font-bold text-[#FFE900]">
-                    Total Income
-                  </p>
-                  <p className="text-xl font-bold">{totalIncome} BNB</p>
+                    <p className="text-lg font-semibold text-yellow-400">{item.title}</p>
+                    <p className="text-2xl font-bold text-white mt-1">{item.value} BNB</p>
                 </div>
-                <img src="assets/RainBNB_files/bnb.png" className="h-12" />
-              </div>
-              <div className="flex justify-between ml-0 md:ml-4 mt-4 md:mt-0 w-full md:w-1/2 bg-[#1e2026] bg-opacity-40 p-4 shadow-lg rounded-sm font-bold text-lg">
-                <div>
-                  <p className="text-lg font-bold text-[#FFE900]">
-                    Total Deposit
-                  </p>
-                  <p className="text-xl font-bold">{totalDeposit} BNB</p>
-                </div>
-                <img src="assets/RainBNB_files/bnb.png" className="h-12" />
-              </div>
+                <img src={`assets/RainBNB_files/${item.icon}`} alt={item.title} className="h-12" />
             </div>
-          </div>
         </div>
-        <div className="flex justify-center px-4 md:p-0 mt-4">
-          <div className="md:w-3/4 w-full">
-            <div className="flex flex-col md:flex-row justify-between text-white">
-              <div className="flex justify-between w-full md:w-1/2 bg-[#1e2026] bg-opacity-40 p-4 shadow-lg rounded-sm font-bold text-lg">
-                <div>
-                  <p className="text-lg font-bold text-[#FFE900]">
-                    Direct Referrals
-                  </p>
-                  <p className="text-xl font-bold">{directTeam}</p>
-                </div>
-                <img src="assets/RainBNB_files/leader.png" className="h-12" />
-              </div>
-              <div className="flex justify-between ml-0 md:ml-4 mt-4 md:mt-0 w-full md:w-1/2 bg-[#1e2026] bg-opacity-40 p-4 shadow-lg rounded-sm font-bold text-lg">
-                <div>
-                  <p className="text-lg font-bold text-[#FFE900]">
-                    My Community Size
-                  </p>
-                  <p className="text-xl font-bold">{totalMatrixTeam}</p>
-                </div>
-                <img src="assets/RainBNB_files/matrix.png" className="h-12" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-center px-4 md:p-0 mt-4">
-          <div className="md:w-3/4 w-full">
-            <div className="flex flex-col md:flex-row justify-between text-white">
-              <div className="flex justify-between w-full md:w-1/2 bg-[#1e2026] bg-opacity-40 p-4 shadow-lg rounded-sm font-bold text-lg">
-                <div>
-                  <p className="text-lg font-bold text-[#FFE900]">
-                    Direct Income
-                  </p>
-                  <p className="text-xl font-bold">{directReferralIncome} BNB</p>
-                </div>
-                <img src="assets/RainBNB_files/bnb.png" className="h-12" />
-              </div>
-              <div className="flex justify-between ml-0 md:ml-4 mt-4 md:mt-0 w-full md:w-1/2 bg-[#1e2026] bg-opacity-40 p-4 shadow-lg rounded-sm font-bold text-lg">
-                <div>
-                  <p className="text-lg font-bold text-[#FFE900]">
-                    Referral Income
-                  </p>
-                  <p className="text-xl font-bold">{referralIncome} BNB</p>
-                </div>
-                <img src="assets/RainBNB_files/bnb.png" className="h-12" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-center px-4 md:p-0 mt-4">
-          <div className="md:w-3/4 w-full">
-            <div className="flex flex-col md:flex-row justify-between text-white">
-              <div className="flex justify-between w-full md:w-1/2 bg-[#1e2026] bg-opacity-40 p-4 shadow-lg rounded-sm font-bold text-lg">
-                <div>
-                  <p className="text-lg font-bold text-[#FFE900]">
-                    Upgrade Income
-                  </p>
-                  <p className="text-xl font-bold">{levelIncome} BNB</p>
-                </div>
-                <img src="assets/RainBNB_files/bnb.png" className="h-12" />
-              </div>
-            </div>
-          </div>
-        </div>
+    ))}
+</div>
+
+
+
+
+
+
+
         <div className="flex justify-center px-4 md:p-0 mt-8">
           <div className="md:w-3/4 w-full">
             <h1 className="font-bold text-2xl px-2 text-yellow-500">
@@ -902,6 +765,12 @@ Learn how to configure a non-root public URL by running `npm run build`.
           </div>
         </div>
        
+
+
+
+
+
+
         
         <div className="flex justify-center px-4 md:p-0 mt-10 mb-4">
           
