@@ -1,0 +1,898 @@
+// src/blockchain/config.js
+import { ethers } from 'ethers';
+
+export const RPC_URL = "https://opbnb-mainnet-rpc.bnbchain.org";  // ✅ Tumhara testnet RPC URL
+export const CONTRACT_ADDRESS = "0xe1035d5FD1394DA5644944d4236a790AE9D1234f";           // ✅ Tumhara Smart Contract Address
+export const CONTRACT_ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_feeReceiver",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "user",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "level",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "IncomeDistributed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256[17]",
+        "name": "newLevels",
+        "type": "uint256[17]"
+      }
+    ],
+    "name": "LevelsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "NewCycleStarted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "UnclaimedToFeeReceiver",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "user",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "level",
+        "type": "uint256"
+      }
+    ],
+    "name": "Upgrade",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "activity",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "level",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimDeadline",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "directTeam",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "flashoutIncome",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "globalUsers",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "id",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "incomeInfo",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "layer",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "time",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "levels",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "matrixDirect",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [],
+    "name": "startTime",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "teams",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [],
+    "name": "totalUsers",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "userInfo",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "referrer",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "upline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "start",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "level",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "directTeam",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalMatrixTeam",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalIncome",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalDeposit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "referralIncome",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "levelIncome",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "directReferralIncome",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive",
+    "payable": true
+  },
+  {
+    "inputs": [],
+    "name": "resetLevelsToZero",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "resetLevelsToInitial",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_ref",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_newAcc",
+        "type": "address"
+      }
+    ],
+    "name": "register",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function",
+    "payable": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_lvls",
+        "type": "uint256"
+      }
+    ],
+    "name": "upgrade",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function",
+    "payable": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_user",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimIncome",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "transferUnclaimedToFeeReceiver",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_user",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_layer",
+        "type": "uint256"
+      }
+    ],
+    "name": "getMatrixUsers",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "referrer",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "upline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "start",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "level",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "directTeam",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalMatrixTeam",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalIncome",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalDeposit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "referralIncome",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "levelIncome",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[17]",
+            "name": "income",
+            "type": "uint256[17]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "directReferralIncome",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Vibechain.User[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_user",
+        "type": "uint256"
+      }
+    ],
+    "name": "getIncome",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "layer",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Vibechain.Income[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_user",
+        "type": "uint256"
+      }
+    ],
+    "name": "getMatrixDirect",
+    "outputs": [
+      {
+        "internalType": "uint256[2]",
+        "name": "_directs",
+        "type": "uint256[2]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_user",
+        "type": "uint256"
+      }
+    ],
+    "name": "getDirectTeamUsers",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "referrer",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "upline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "start",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "level",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "directTeam",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalMatrixTeam",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalIncome",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalDeposit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "referralIncome",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "levelIncome",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[17]",
+            "name": "income",
+            "type": "uint256[17]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "directReferralIncome",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Vibechain.User[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [],
+    "name": "getLevels",
+    "outputs": [
+      {
+        "internalType": "uint256[17]",
+        "name": "",
+        "type": "uint256[17]"
+      },
+      {
+        "internalType": "uint256[17]",
+        "name": "",
+        "type": "uint256[17]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_num",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRecentActivities",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "level",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Vibechain.Activity[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+      }
+    ],
+    "name": "getLevelIncome",
+    "outputs": [
+      {
+        "internalType": "uint256[17]",
+        "name": "",
+        "type": "uint256[17]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [],
+    "name": "transferOwnershipToZeroAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];      // ✅ Tumhara Contract ABI
+
+export const getContract = () => {
+  const provider = new ethers.JsonRpcProvider("https://opbnb-mainnet-rpc.bnbchain.org");
+  return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+};
