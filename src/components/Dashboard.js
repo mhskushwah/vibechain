@@ -597,76 +597,72 @@ Learn how to configure a non-root public URL by running `npm run build`.
 
 
 
-
 <div className="p-4 md:p-8 flex flex-col items-center bg-black min-h-screen text-white">
-      {/* Title */}
-      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-yellow-400 mb-6 tracking-widest text-center">
-        🚀 PACKAGES
-      </h2>
+  {/* Title */}
+  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-yellow-400 mb-6 tracking-widest text-center">
+    🚀 PACKAGES
+  </h2>
 
-      {/* Responsive Levels Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-5xl">
-        {LEVELS.map((amount, index) => {
-          const adminCharge = (parseFloat(amount) * PERCENTS[index]) / 100;
-          const totalAmount = (parseFloat(amount) + adminCharge).toFixed(4);
-          const isSelected = selectedLevels.includes(index);
-          const isCurrentOrBelow = index < rank;
-          const isNextInSequence = selectedLevels.length === 0 || selectedLevels[selectedLevels.length - 1] === index - 1;
+  {/* Responsive Levels Grid (2 Col on Mobile, 3 on Desktop) */}
+  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-4xl">
+    {LEVELS.map((amount, index) => {
+      const adminCharge = (parseFloat(amount) * PERCENTS[index]) / 100;
+      const totalAmount = (parseFloat(amount) + adminCharge).toFixed(4);
+      const isSelected = selectedLevels.includes(index);
+      const isCurrentOrBelow = index < rank; // Check if it's the current or lower level
+      const isNextInSequence = selectedLevels.length === 0 || selectedLevels[selectedLevels.length - 1] === index - 1;
 
-          return (
-            <motion.button
-              key={index}
-              onClick={() => toggleLevel(index)}
-              whileHover={isNextInSequence && !isCurrentOrBelow ? { scale: 1.05 } : {}}
-              whileTap={isNextInSequence && !isCurrentOrBelow ? { scale: 0.98 } : {}}
-              disabled={isCurrentOrBelow || (!isNextInSequence && !isSelected)}
-              className={`w-full px-4 py-3 text-sm rounded-lg transition-all duration-300 ease-in-out 
-              shadow-md border-2 text-center 
-              ${
-                isCurrentOrBelow
-                  ? "bg-gray-500 text-gray-300 border-gray-600 cursor-not-allowed"
-                  : isSelected
-                  ? "bg-yellow-500 text-black font-bold border-yellow-600 shadow-yellow-600"
-                  : isNextInSequence
-                  ? "bg-gray-800 text-yellow-300 hover:bg-yellow-500 hover:text-black hover:border-yellow-600"
-                  : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-              }`}
-            >
-              {isCurrentOrBelow ? (
-                <Lock className="h-6 w-6 mb-1 text-gray-300" />
-              ) : isSelected ? (
-                <CheckCircle className="h-6 w-6 mb-1 text-black" />
-              ) : isNextInSequence ? (
-                <CheckCircle className="h-6 w-6 mb-1 text-yellow-400" />
-              ) : (
-                <Lock className="h-6 w-6 mb-1 text-gray-400" />
-              )}
-              <span className="font-semibold">{`Level ${index + 1}`}</span>
-              <span className="text-xs mt-1">{totalAmount} BNB</span>
-            </motion.button>
-          );
-        })}
-      </div>
+      return (
+        <motion.button
+          key={index}
+          onClick={() => toggleLevel(index)}
+          whileHover={isNextInSequence && !isCurrentOrBelow ? { scale: 1.1 } : {}}
+          whileTap={isNextInSequence && !isCurrentOrBelow ? { scale: 0.95 } : {}}
+          disabled={isCurrentOrBelow || (!isNextInSequence && !isSelected)}
+          className={`px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex flex-col items-center text-xs sm:text-sm md:text-base rounded-full transition-all duration-300 ease-in-out 
+          shadow-md border-2 text-center
+          ${isCurrentOrBelow
+            ? "bg-gray-500 text-gray-300 border-gray-600 cursor-not-allowed"
+            : isSelected
+            ? "bg-yellow-500 text-black font-bold border-yellow-600 scale-105 shadow-yellow-600"
+            : isNextInSequence
+            ? "bg-gray-800 text-yellow-300 hover:bg-yellow-500 hover:text-black hover:border-yellow-600"
+            : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
+          }`}
+        >
+          {isCurrentOrBelow ? (
+            <Lock className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-gray-300" />
+          ) : isSelected ? (
+            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-black" />
+          ) : isNextInSequence ? (
+            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-yellow-400" />
+          ) : (
+            <Lock className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-gray-400" />
+          )}
+          <span className="font-semibold">{LEVEL_NAMES[index]}</span>
+          <span className="text-xs sm:text-sm mt-1">{totalAmount} BNB</span>
+        </motion.button>
+      );
+    })}
+  </div>
 
-      {/* Upgrade Button */}
-      <motion.button
-        onClick={upgradeLevels}
-        disabled={loading || selectedLevels.length === 0}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.98 }}
-        className={`w-full mt-6 px-5 py-3 flex items-center justify-center gap-3 text-sm font-semibold rounded-lg transition-all duration-300 ease-in-out 
-        shadow-md border-2 border-green-500 text-center 
-        ${
-          loading || selectedLevels.length === 0
-            ? "bg-gray-600 cursor-not-allowed opacity-50"
-            : "bg-green-500 text-black hover:bg-green-600"
-        }`}
-      >
-        <ArrowUpCircle className="h-6 w-6" />
-        {loading ? "Processing..." : `Upgrade for ${finalAmount.toFixed(5)} BNB`}
-      </motion.button>
-    </div>
-
+  {/* Upgrade Button (Responsive Sizing & Placement) */}
+  <motion.button
+    onClick={upgradeLevels}
+    disabled={loading || selectedLevels.length === 0}
+    whileHover={{ scale: 1.1 }}
+    whileTap={{ scale: 0.95 }}
+    className={`mt-6 sm:mt-8 px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold rounded-full transition-all duration-300 ease-in-out 
+    shadow-md border-2 border-green-500 glow-effect text-center
+    ${loading || selectedLevels.length === 0
+      ? "bg-gray-600 cursor-not-allowed opacity-50"
+      : "bg-green-500 text-black hover:bg-green-600"
+    }`}
+  >
+    <ArrowUpCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
+    {loading ? "Processing..." : `Upgrade for ${finalAmount.toFixed(5)} BNB`}
+  </motion.button>
+</div>
 
 
 
