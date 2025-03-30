@@ -12,6 +12,7 @@ const Navbar = () => {
 
   // Logout function
   const handleLogout = () => {
+    console.log("User logged out due to tab close or inactivity.");
     localStorage.removeItem('userToken'); // Example: Remove user session
     sessionStorage.clear(); // Clear session data
     navigate('/logout'); // Redirect to logout page
@@ -24,12 +25,24 @@ const Navbar = () => {
     setPrevScrollPos(currentScrollPos);
   };
 
-  // Handle logout when the tab is closed
+  // Handle logout when the tab is closed or inactive
   useEffect(() => {
-    window.addEventListener('beforeunload', handleLogout);
+    const handleTabClose = () => {
+      handleLogout();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleLogout(); // Logout when the tab is hidden
+      }
+    };
+
+    window.addEventListener('beforeunload', handleTabClose);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('beforeunload', handleLogout);
+      window.removeEventListener('beforeunload', handleTabClose);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
