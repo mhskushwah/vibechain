@@ -4,8 +4,12 @@ import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
 import { CheckCircle, ArrowUpCircle, Lock} from "lucide-react";
 import { motion } from "framer-motion";
 import { FaLink, FaCopy, FaCheckCircle } from "react-icons/fa";
+import { parseUnits, isAddress } from "ethers";
+import { parseEther } from "ethers";
+import { useSearchParams } from "react-router-dom"; // Import for URL handling
 
 
+/* global BigInt */
 
 const LEVELS = [
    "0.006", "0.012", "0.024", "0.048", "0.096", "0.192",
@@ -146,28 +150,32 @@ const Dashboard = () => {
   const handleRegister = async () => {
     if (!walletAddress) return alert("Connect wallet first!");
 
-    let refId = localStorage.getItem("referrerId");
-
-    if (!refId || isNaN(refId) || Number(refId) <= 0) {
-        alert("❌ Not a valid referral link! Registration denied.");
-        return;
-    }
-
-    refId = window.BigInt(refId); // Convert to BigInt
-
     setLoading(true);
 
     try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer); // ✅ Use signer
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
         const userAddress = await signer.getAddress();
         const balance = await provider.getBalance(userAddress);
-        const valueInWei = ethers.parseEther("0.0044"); // ✅ Correctly formatted value
+        const valueInWei = ethers.parseUnits("0.0044", "ether"); // Convert BNB to Wei
+
+        // ✅ Step 1: Get Referral ID from URL
+        const searchParams = new URLSearchParams(window.location.search);
+        const referralId = searchParams.get("ref"); // Extract "ref" from URL
+
+        if (!referralId) {
+            alert("❌ No referral ID found! Please use a valid referral link.");
+            setLoading(false);
+            return;
+        }
 
         console.log("User Balance:", ethers.formatEther(balance), "BNB");
         console.log("Value in Wei Required:", valueInWei.toString());
+        console.log("Contract Address:", CONTRACT_ADDRESS);
+        console.log("Signer Address:", userAddress);
+        console.log("Referral ID:", referralId);
 
         if (balance < valueInWei) {
             alert("❌ Insufficient BNB Balance! Please add funds.");
@@ -175,17 +183,11 @@ const Dashboard = () => {
             return;
         }
 
-        console.log("Ref ID:", refId);
-        console.log("Contract Address:", CONTRACT_ADDRESS);
-        console.log("Signer Address:", userAddress);
-
-        // ✅ Fix: Ensure `refId` is correctly passed and `value` is properly formatted
-        const tx = await contract.register(refId, { value: valueInWei });
+        // ✅ Use the extracted referral ID dynamically
+        const tx = await contract.register(referralId, userAddress, { value: valueInWei });
 
         await tx.wait();
 
-        setRegistrationOpen(false);
-        getUserData(walletAddress);
         alert("Registration Successful ✅");
     } catch (err) {
         console.error("❌ Registration failed:", err);
@@ -195,6 +197,9 @@ const Dashboard = () => {
     }
 };
 
+
+
+  
   
 
 const toggleLevel = (index) => {
@@ -433,42 +438,11 @@ Learn how to configure a non-root public URL by running `npm run build`.
         src="assets/RainBNB_files/bgmobimg.png"
         className="fixed w-full left-0 md:top-0 block md:hidden top-0 z-0 opacity-100"
       />
-      <div className="notification-container notification-container-empty">
-        <div />
-      </div>
+    
       <div className="pb-4 text-black dark:text-white transition-colors duration-1000 min-h-screen relative">
         
-        <div className="flex justify-center w-full px-4 mt-6">
-          <div className="w-full md:w-3/4">
-            <div className="flex items-center justify-between w-full overflow-x-auto">
-              <a
-                className="md:w-1/5 whitespace-nowrap min-w-[150px]"
-                href="https://vibechain.pro/dashboard"
-              >
-                
-              </a>
-              <a
-                className="md:w-1/5 whitespace-nowrap min-w-[150px] ml-4"
-                href="https://vibechain.pro/myteam"
-              >
-               
-              </a>
-              <a
-                className="md:w-1/5 whitespace-nowrap min-w-[150px] ml-4"
-                href="https://vibechain.pro/communityinfo"
-              >
-                
-              </a>
-              <a
-                className="md:w-1/5 whitespace-nowrap min-w-[150px] ml-4"
-                href="https://vibechain.pro/communitytree"
-              >
-               
-              </a>
-            </div>
-          </div>
-        </div>
-        <div /> 
+      
+        <br></br>
         <br></br>
         <br></br>
        
@@ -504,18 +478,23 @@ Learn how to configure a non-root public URL by running `npm run build`.
                 </div>
             </div>
             
-            {/* Referral Section */}
+       
             <div className="flex flex-col items-center mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-lg shadow-lg">
-                <h1 className="text-lg font-bold mb-4 text-yellow-400">Referral Link</h1>
-                <div className="flex justify-between items-center bg-gray-800 p-3 rounded-md w-full">
-                    <span className="text-sm cursor-pointer bg-yellow-500 rounded-sm px-5 py-2 text-black" onClick={handleCopy}>
-                        {referralLink}
-                    </span>
-                    {copied && (
-                        <span className="text-xs text-green-400 ml-2">Copied!</span>
-                    )}
-                </div>
-            </div>
+    <h1 className="text-lg font-bold mb-4 text-yellow-400">Referral Link</h1>
+    <div className="flex items-center bg-gray-800 p-3 rounded-md w-full">
+        <span 
+            className="text-sm bg-yellow-500 rounded-sm px-5 py-2 text-black break-words whitespace-normal w-full text-center cursor-pointer"
+            onClick={handleCopy}
+        >
+            {referralLink}
+        </span>
+        {copied && (
+            <span className="text-xs text-green-400 ml-3 whitespace-nowrap">Copied!</span>
+        )}
+    </div>
+</div>
+
+
             
             {/* Registration Popup */}
             {showRegisterPopup && (
