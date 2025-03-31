@@ -153,7 +153,8 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+      const BSC_RPC_URL = "https://bsc-dataseed.binance.org/";
+        const provider = new ethers.BrowserProvider(BSC_RPC_URL);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
