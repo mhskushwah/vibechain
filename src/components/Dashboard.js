@@ -692,26 +692,29 @@ Learn how to configure a non-root public URL by running `npm run build`.
 
 
 
-        <div className="p-4 md:p-8 flex flex-col items-center bg-black min-h-screen text-white">
+<div className="p-4 md:p-8 flex flex-col items-center bg-black min-h-screen text-white">
   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-yellow-400 mb-6 tracking-widest text-center">
     🚀 PACKAGES
   </h2>
 
-  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-4xl">
+  {/* Grid Adjustments */}
+  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-4xl justify-center">
     {LEVELS.map((amount, index) => {
       if (index < rank) return null; // Hide already activated levels
       const adminCharge = (parseFloat(amount) * PERCENTS[index]) / 100;
-      
       const totalAmount = (parseFloat(amount) + adminCharge).toFixed(4);
       const isSelected = selectedLevels.includes(index);
-      const isNextInSequence = (selectedLevels.length === 0 && index === (Number(rank)) ) || selectedLevels[selectedLevels.length - 1] === index - 1;
+      const isNextInSequence =
+        (selectedLevels.length === 0 && index === Number(rank)) ||
+        selectedLevels[selectedLevels.length - 1] === index - 1;
+
       return (
         <motion.button
           key={index}
           onClick={() => toggleLevel(index)}
           whileHover={isNextInSequence ? { scale: 1.1 } : {}}
           whileTap={isNextInSequence ? { scale: 0.95 } : {}}
-          disabled={ !isNextInSequence && !isSelected} // Lock levels that are not unlocked
+          disabled={!isNextInSequence && !isSelected} // Lock levels that are not unlocked
           className={`px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex flex-col items-center text-xs sm:text-sm md:text-base rounded-full transition-all duration-300 ease-in-out 
           shadow-md border-2 text-center font-extrabold transform hover:scale-105 active:scale-95
           ${isSelected
@@ -721,13 +724,13 @@ Learn how to configure a non-root public URL by running `npm run build`.
             : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
           }`}
         >
-       {isSelected ? (
-                <CheckCircle className="h-5 w-5 mb-1 text-black" />
-              ) : isNextInSequence ? (
-                <CheckCircle className="h-5 w-5 mb-1 text-yellow-400" />
-              ) : (
-                <Lock className="h-5 w-5 mb-1 text-gray-400" />
-              )}
+          {isSelected ? (
+            <CheckCircle className="h-5 w-5 mb-1 text-black" />
+          ) : isNextInSequence ? (
+            <CheckCircle className="h-5 w-5 mb-1 text-yellow-400" />
+          ) : (
+            <Lock className="h-5 w-5 mb-1 text-gray-400" />
+          )}
           <span className="font-semibold">{LEVEL_NAMES[index]}</span>
           <span className="text-xs sm:text-sm mt-1">{totalAmount} BNB</span>
         </motion.button>
@@ -735,22 +738,49 @@ Learn how to configure a non-root public URL by running `npm run build`.
     })}
   </div>
 
+  {/* Adjusting Margin for Button */}
+  {rank < 17 ? (
   <motion.button
     onClick={upgradeLevels}
-    disabled={loading || selectedLevels.length > 0}
+    disabled={loading || selectedLevels.length === 0}
     whileHover={{ scale: 1.1 }}
     whileTap={{ scale: 0.95 }}
     className={`mt-6 sm:mt-8 px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold rounded-full transition-all duration-300 ease-in-out 
-    shadow-md border-2 border-green-500 glow-effect text-center
-    ${loading || selectedLevels.length === 0
-      ? "bg-gray-600 cursor-not-allowed opacity-50"
-      : "bg-green-500 text-black hover:bg-green-600"
-    }`}
+      shadow-md border-2 border-green-500 glow-effect text-center
+      ${loading || selectedLevels.length === 0
+        ? "bg-gray-600 cursor-not-allowed opacity-50"
+        : "bg-green-500 text-black hover:bg-green-600"
+      }`}
   >
     <ArrowUpCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
     {loading ? "Processing..." : `Upgrade for ${finalAmount.toFixed(5)} BNB`}
   </motion.button>
+) : (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.6, ease: "easeOut" }}
+    className="mt-6 sm:mt-8 text-center text-white"
+  >
+    <motion.div
+      initial={{ scale: 0.5, rotate: -10 }}
+      animate={{ scale: 1.2, rotate: 0 }}
+      transition={{ yoyo: Infinity, duration: 1.5, ease: "easeInOut" }}
+      className="inline-block"
+    >
+      🎉
+    </motion.div>
+    <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-yellow-400 drop-shadow-lg">
+      ALL LEVELS UPGRADED!
+    </h2>
+    <p className="mt-2 text-lg sm:text-xl md:text-2xl font-semibold text-gray-300">
+      You have successfully unlocked all levels.
+    </p>
+  </motion.div>
+)}
+
 </div>
+
 
 <div className="flex flex-wrap justify-center gap-6 mt-6 px-4">
     {[
