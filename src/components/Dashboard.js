@@ -44,6 +44,64 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false);
     const [selectedLevels, setSelectedLevels] = useState([0]);
 
+
+    
+
+    const updateWalletDetails = async () => {
+      if (window.ethereum) {
+          try {
+              const provider = new ethers.BrowserProvider(window.ethereum);
+              const signer = await provider.getSigner();
+              const address = await signer.getAddress();
+              setWalletAddress(address);
+              
+              console.log("🔄 Wallet Updated:", address);
+          } catch (error) {
+              console.error("❌ Error fetching wallet:", error);
+          }
+      }
+  };
+  useEffect(() => {
+    updateWalletDetails(); // Fetch wallet initially
+
+    // ✅ Listen for wallet changes
+    if (window.ethereum) {
+        window.ethereum.on("accountsChanged", (accounts) => {
+            if (accounts.length > 0) {
+                setWalletAddress(accounts[0]);
+                console.log("🔄 Wallet Changed:", accounts[0]);
+            } else {
+                setWalletAddress(null);
+                console.log("❌ Wallet Disconnected");
+            }
+        });
+    }
+
+    return () => {
+        if (window.ethereum) {
+            window.ethereum.removeListener("accountsChanged", updateWalletDetails);
+        }
+    };
+}, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // ✅ Get ref id from URL
     useEffect(() => {
         const queryParams = new URLSearchParams(window.location.search);
@@ -453,9 +511,9 @@ Learn how to configure a non-root public URL by running `npm run build`.
         <div className="flex flex-col items-center px-4 md:px-8 lg:px-16 py-6 bg-black min-h-screen text-white">
             {/* Wallet Section */}
             <div className="mt-6 w-full max-w-2xl bg-gray-900 text-yellow-300 p-6 rounded-lg shadow-lg">
-                <div className="text-center text-sm bg-gray-800 p-2 rounded-md">
-                    {walletAddress || "Not connected"}
-                </div>
+            <div className="text-center text-sm bg-gray-800 p-2 rounded-md break-all max-w-full overflow-hidden text-ellipsis">
+    {walletAddress || "Not connected"}
+</div>
                 <div className="mt-4 bg-yellow-500 text-black font-bold py-3 px-6 text-center rounded-md shadow-md">
                     My Wallet Fund: {walletBalance} BNB
                 </div>
@@ -478,12 +536,12 @@ Learn how to configure a non-root public URL by running `npm run build`.
             <div className="flex flex-col items-center mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-lg shadow-lg">
     <h1 className="text-lg font-bold mb-4 text-yellow-400">Referral Link</h1>
     <div className="flex items-center bg-gray-800 p-3 rounded-md w-full">
-        <span 
-            className="text-sm bg-yellow-500 rounded-sm px-5 py-2 text-black break-words whitespace-normal w-full text-center cursor-pointer"
-            onClick={handleCopy}
-        >
-            {referralLink}
-        </span>
+    <span 
+    className="text-lg bg-yellow-500 rounded-sm px-5 py-2 text-black break-all w-full text-center cursor-pointer overflow-hidden text-ellipsis"
+    onClick={handleCopy}
+>
+    {referralLink}
+</span>
         {copied && (
             <span className="text-xs text-green-400 ml-3 whitespace-nowrap">Copied!</span>
         )}
@@ -592,20 +650,20 @@ Learn how to configure a non-root public URL by running `npm run build`.
 
 <div className="flex flex-wrap justify-center gap-6 mt-6 px-4">
     {[
-        { title: "Total Income", value: totalIncome, icon: "bnb.png", showBNB: true },
-        { title: "Total Deposit", value: totalDeposit, icon: "bnb.png", showBNB: true },
-        { title: "Direct Referrals", value: directTeam, icon: "leader.png", showBNB: false },
-        { title: "My Community Size", value: totalMatrixTeam, icon: "matrix.png", showBNB: false },
-        { title: "Direct Income", value: directReferralIncome, icon: "bnb.png", showBNB: true },
-        { title: "Referral Income", value: referralIncome, icon: "bnb.png", showBNB: true },
-        { title: "Upgrade Income", value: levelIncome, icon: "bnb.png", showBNB: true },
+        { title: "Total Income", value: totalIncome, icon: "bnb.png", showBNB: true, isBNB: true },
+        { title: "Total Deposit", value: totalDeposit, icon: "bnb.png", showBNB: true, isBNB: true },
+        { title: "Direct Referrals", value: directTeam, icon: "leader.png", showBNB: false, isBNB: false },
+        { title: "My Community Size", value: totalMatrixTeam, icon: "matrix.png", showBNB: false, isBNB: false },
+        { title: "Direct Income", value: directReferralIncome, icon: "bnb.png", showBNB: true, isBNB: true },
+        { title: "Referral Income", value: referralIncome, icon: "bnb.png", showBNB: true, isBNB: true },
+        { title: "Upgrade Income", value: levelIncome, icon: "bnb.png", showBNB: true, isBNB: true },
     ].map((item, index) => (
         <div key={index} className="bg-gray-900 bg-opacity-50 p-6 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 rounded-xl shadow-lg border border-gray-800 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-lg font-semibold text-yellow-400">{item.title}</p>
                     <p className="text-2xl font-bold text-white mt-1">
-                        {ethers.formatUnits(item.value, "ether")} {item.showBNB ? "BNB" : ""}
+                        {item.isBNB ? ethers.formatUnits(item.value, "ether") : Number(item.value).toLocaleString()} {item.showBNB ? "BNB" : ""}
                     </p>
                 </div>
                 <img src={`assets/RainBNB_files/${item.icon}`} alt={item.title} className="h-12" />
@@ -687,55 +745,55 @@ Learn how to configure a non-root public URL by running `npm run build`.
                   Amount
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[0]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[0] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[1]?.toString()}  <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[1] || "0", "ether")}  <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[2]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[2] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[3]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[3] || "0", "ether")}<span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[4]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[4] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[5]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[5] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[6]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[6] || "0", "ether")}<span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[7]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[7] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[8]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[8] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[9]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[9] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[10]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[10] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[11]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[11] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[12]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[12] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[13]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[13] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[14]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[14] || "0", "ether")}<span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[15]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[15] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                {income[16]?.toString()} <span className="text-[#FFE900]">BNB</span>
+                {ethers.formatUnits(income[16] || "0", "ether")} <span className="text-[#FFE900]">BNB</span>
                 </p>
               </div>
             </div>
