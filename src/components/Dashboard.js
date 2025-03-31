@@ -79,8 +79,7 @@ const Dashboard = () => {
     // ✅ Get Wallet Balance
     const getWalletBalance = async (wallet) => {
         try {
-          const BSC_RPC_URL = "https://rpc.ankr.com/bsc/602dad926997f28c503802b983998452f478df6a1d71d150ba35f06d1fe8dd66";
-            const provider = new BrowserProvider(BSC_RPC_URL);
+            const provider = new BrowserProvider(window.ethereum);
             const balance = await provider.getBalance(wallet);
             setWalletBalance(ethers.formatEther(balance)); 
         } catch (error) {
@@ -91,8 +90,7 @@ const Dashboard = () => {
     // ✅ Get User Data & Income Array
     const getUserData = async (wallet) => {
         try {
-          const BSC_RPC_URL = "https://rpc.ankr.com/bsc/602dad926997f28c503802b983998452f478df6a1d71d150ba35f06d1fe8dd66";
-            const provider = new BrowserProvider(BSC_RPC_URL);
+            const provider = new BrowserProvider(window.ethereum);
             const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
             const userId = await contract.id(wallet);
@@ -127,8 +125,7 @@ const Dashboard = () => {
 
     const checkUserRegistration = async (wallet) => {
       try {
-        const BSC_RPC_URL = "https://rpc.ankr.com/bsc/602dad926997f28c503802b983998452f478df6a1d71d150ba35f06d1fe8dd66";
-          const provider = new BrowserProvider(BSC_RPC_URL);
+          const provider = new BrowserProvider(window.ethereum);
           const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
           const userId = await contract.id(wallet);
   
@@ -156,8 +153,7 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
-      const BSC_RPC_URL = "https://rpc.ankr.com/bsc/602dad926997f28c503802b983998452f478df6a1d71d150ba35f06d1fe8dd66";
-        const provider = new ethers.BrowserProvider(BSC_RPC_URL);
+        const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
@@ -240,8 +236,7 @@ const upgradeLevels = async () => {
 
   try {
     setLoading(true);
-    const BSC_RPC_URL = "https://rpc.ankr.com/bsc/602dad926997f28c503802b983998452f478df6a1d71d150ba35f06d1fe8dd66";
-    const provider = new ethers.BrowserProvider(BSC_RPC_URL);
+    const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
