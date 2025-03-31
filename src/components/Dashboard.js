@@ -14,7 +14,7 @@ const LEVELS = [
   "49.152", "98.304", "196.608"
 ];
 const LEVEL_NAMES = [
-  "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+  "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 const LEVEL_NAMES1 = [
   "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
@@ -288,20 +288,45 @@ const toggleLevel = (index) => {
   }
 };
 
+
+const checkUserRegistered = async () => {
+  if (!window.ethereum) {
+      alert("Please install MetaMask!");
+      return;
+  }
+
+  try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      const userInfo = await contract.userInfo(userId);
+
+      console.log("User Info:", userInfo);
+
+      if (userInfo.referrer === 0) {
+          alert("User is NOT registered. Please register first.");
+          return false;
+      }
+      return true;
+  } catch (error) {
+      console.error("Error fetching user info:", error);
+      return false;
+  }
+};
+
 const upgradeLevels = async () => {
   if (!window.ethereum) {
     alert("Please install MetaMask!");
     return;
   }
 
-  if (referrerId === 0) {
-    alert("Register First!!!!!!");
-    return;
-    }
-   
+  const isRegistered = await checkUserRegistered();  // 🛠️ Pehle user check karo
+  if (!isRegistered) return; // Agar registered nahi hai to upgrade nahi hoga
 
   if (selectedLevels.length === 0) {
-   
+    alert("Please select at least one level to upgrade!");
+    return;
   }
 
   try {
@@ -318,18 +343,30 @@ const upgradeLevels = async () => {
     const finalAmount = totalAmount + totalAdminCharge;
     const totalBNB = ethers.parseEther(finalAmount.toString());
 
-    const tx = await contract.upgrade(1, selectedLevels.length, { value: totalBNB });
+    console.log(`Upgrading ${selectedLevels.length} levels for User ID: ${userId}`);
+    console.log(`Total Cost: ${ethers.formatEther(totalBNB)} BNB`);
+
+    const tx = await contract.upgrade(userId, selectedLevels.length, { value: totalBNB });
 
     await tx.wait();
     alert("Upgrade Successful!");
     setSelectedLevels([]);
   } catch (error) {
-    console.error(error);
-    alert("Upgrade Failed!");
+    console.error("Upgrade Error:", error);
+    alert("Upgrade Failed! Check console.");
   } finally {
     setLoading(false);
   }
 };
+
+
+
+
+
+
+
+
+
 
 const totalAmount = selectedLevels.reduce((acc, idx) => acc + parseFloat(LEVELS[idx]), 0);
 const totalAdminCharge = selectedLevels.reduce((acc, idx) => {
