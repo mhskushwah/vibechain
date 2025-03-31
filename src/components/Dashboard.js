@@ -472,24 +472,22 @@ Learn how to configure a non-root public URL by running `npm run build`.
                     <div className="bg-gray-800 py-1 px-3 rounded-md">{referrerId}</div>
                 </div>
 
-
-
             </div>
             
        
             <div className="flex flex-col items-center mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-lg shadow-lg">
     <h1 className="text-lg font-bold mb-4 text-yellow-400">Referral Link</h1>
     <div className="flex items-center bg-gray-800 p-3 rounded-md w-full">
-    <span 
-        className="text-lg bg-yellow-500 rounded-sm px-5 py-2 text-black break-words whitespace-normal w-full text-center cursor-pointer font-semibold"
-        onClick={handleCopy}
-    >
-        {referralLink}
-    </span>
-    {copied && (
-        <span className="text-xs text-green-400 ml-3 whitespace-nowrap">Copied!</span>
-    )}
-</div>
+        <span 
+            className="text-sm bg-yellow-500 rounded-sm px-5 py-2 text-black break-words whitespace-normal w-full text-center cursor-pointer"
+            onClick={handleCopy}
+        >
+            {referralLink}
+        </span>
+        {copied && (
+            <span className="text-xs text-green-400 ml-3 whitespace-nowrap">Copied!</span>
+        )}
+    </div>
 </div>
 
 
@@ -592,21 +590,23 @@ Learn how to configure a non-root public URL by running `npm run build`.
 
 
 
-        <div className="flex flex-wrap justify-center gap-6 mt-6 px-4">
+<div className="flex flex-wrap justify-center gap-6 mt-6 px-4">
     {[
-        { title: "Total Income", value: totalIncome, icon: "bnb.png" },
-        { title: "Total Deposit", value: totalDeposit, icon: "bnb.png" },
-        { title: "Direct Referrals", value: directTeam, icon: "leader.png" },
-        { title: "My Community Size", value: totalMatrixTeam, icon: "matrix.png" },
-        { title: "Direct Income", value: directReferralIncome, icon: "bnb.png" },
-        { title: "Referral Income", value: referralIncome, icon: "bnb.png" },
-        { title: "Upgrade Income", value: levelIncome, icon: "bnb.png" },
+        { title: "Total Income", value: totalIncome, icon: "bnb.png", showBNB: true },
+        { title: "Total Deposit", value: totalDeposit, icon: "bnb.png", showBNB: true },
+        { title: "Direct Referrals", value: directTeam, icon: "leader.png", showBNB: false },
+        { title: "My Community Size", value: totalMatrixTeam, icon: "matrix.png", showBNB: false },
+        { title: "Direct Income", value: directReferralIncome, icon: "bnb.png", showBNB: true },
+        { title: "Referral Income", value: referralIncome, icon: "bnb.png", showBNB: true },
+        { title: "Upgrade Income", value: levelIncome, icon: "bnb.png", showBNB: true },
     ].map((item, index) => (
         <div key={index} className="bg-gray-900 bg-opacity-50 p-6 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 rounded-xl shadow-lg border border-gray-800 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-lg font-semibold text-yellow-400">{item.title}</p>
-                    <p className="text-2xl font-bold text-white mt-1">{item.value} BNB</p>
+                    <p className="text-2xl font-bold text-white mt-1">
+                        {ethers.formatUnits(item.value, "ether")} {item.showBNB ? "BNB" : ""}
+                    </p>
                 </div>
                 <img src={`assets/RainBNB_files/${item.icon}`} alt={item.title} className="h-12" />
             </div>
