@@ -3,6 +3,7 @@ import { BrowserProvider, ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
 import { CheckCircle, ArrowUpCircle, Lock} from "lucide-react";
 import { motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 
 
 /* global BigInt */
@@ -13,7 +14,7 @@ const LEVELS = [
   "49.152", "98.304", "196.608"
 ];
 const LEVEL_NAMES = [
-  "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+  "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 const LEVEL_NAMES1 = [
   "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
@@ -43,46 +44,62 @@ const Dashboard = () => {
     const [registrationOpen, setRegistrationOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedLevels, setSelectedLevels] = useState([0]);
+    const [searchParams] = useSearchParams(); // URL से referral ID निकालने के लिए
 
 
-    
 
-    const updateWalletDetails = async () => {
+
+    const getWalletDetails = async () => {
       if (window.ethereum) {
           try {
               const provider = new ethers.BrowserProvider(window.ethereum);
               const signer = await provider.getSigner();
               const address = await signer.getAddress();
               setWalletAddress(address);
-              
-              console.log("🔄 Wallet Updated:", address);
+
+              // ✅ Wallet Balance Fetch करके BNB में Convert करो
+              const balance = await provider.getBalance(address);
+              setWalletBalance(ethers.formatEther(balance));
+
           } catch (error) {
-              console.error("❌ Error fetching wallet:", error);
+              console.error("Wallet fetch error:", error);
           }
+      } else {
+          console.log("No Ethereum wallet detected!");
       }
   };
+
+  // ✅ Wallet Change Listener (Real-Time Update)
   useEffect(() => {
-    updateWalletDetails(); // Fetch wallet initially
+      getWalletDetails(); // Page Load होते ही Wallet चेक करो
 
-    // ✅ Listen for wallet changes
-    if (window.ethereum) {
-        window.ethereum.on("accountsChanged", (accounts) => {
-            if (accounts.length > 0) {
-                setWalletAddress(accounts[0]);
-                console.log("🔄 Wallet Changed:", accounts[0]);
-            } else {
-                setWalletAddress(null);
-                console.log("❌ Wallet Disconnected");
-            }
-        });
-    }
+      if (window.ethereum) {
+          window.ethereum.on("accountsChanged", (accounts) => {
+              if (accounts.length > 0) {
+                  setWalletAddress(accounts[0]);
+                  getWalletDetails();
+              } else {
+                  setWalletAddress("");
+                  setWalletBalance("0");
+              }
+          });
+      }
 
-    return () => {
-        if (window.ethereum) {
-            window.ethereum.removeListener("accountsChanged", updateWalletDetails);
-        }
-    };
-}, []);
+      return () => {
+          if (window.ethereum) {
+              window.ethereum.removeListener("accountsChanged", getWalletDetails);
+          }
+      };
+  }, []);
+
+  // ✅ Referral ID Handle करो
+  useEffect(() => {
+      const refIdFromUrl = searchParams.get("ref");
+      if (refIdFromUrl) {
+          setRef(refIdFromUrl);
+      }
+  }, [searchParams]);
+
 
 
 
