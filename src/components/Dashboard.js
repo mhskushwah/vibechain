@@ -3,10 +3,6 @@ import { BrowserProvider, ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
 import { CheckCircle, ArrowUpCircle, Lock} from "lucide-react";
 import { motion } from "framer-motion";
-import { FaLink, FaCopy, FaCheckCircle } from "react-icons/fa";
-import { parseUnits, isAddress } from "ethers";
-import { parseEther } from "ethers";
-import { useSearchParams } from "react-router-dom"; // Import for URL handling
 
 
 /* global BigInt */
@@ -17,7 +13,10 @@ const LEVELS = [
   "49.152", "98.304", "196.608"
 ];
 const LEVEL_NAMES = [
-   "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+  "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+];
+const LEVEL_NAMES1 = [
+  "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 
 const PERCENTS = [ 5, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]; // Admin percentage
@@ -43,7 +42,6 @@ const Dashboard = () => {
     const [showRegisterPopup, setShowRegisterPopup] = useState(false);
     const [registrationOpen, setRegistrationOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [level, setLevel] = useState(1);
     const [selectedLevels, setSelectedLevels] = useState([0]);
 
     // ✅ Get ref id from URL
@@ -162,20 +160,19 @@ const Dashboard = () => {
         const valueInWei = ethers.parseUnits("0.0044", "ether"); // Convert BNB to Wei
 
         // ✅ Step 1: Get Referral ID from URL
-        const searchParams = new URLSearchParams(window.location.search);
-        const referralId = searchParams.get("ref"); // Extract "ref" from URL
+        let refId = localStorage.getItem("referrerId"); // Get stored referral ID
 
-        if (!referralId) {
-            alert("❌ No referral ID found! Please use a valid referral link.");
-            setLoading(false);
-            return;
-        }
+        if (!refId || isNaN(refId) || Number(refId ) <= 0 ) {
+          alert("❌ Not a valid referral link! Please use a valid referral.");
+          return; // ❌ Stop execution if invalid referrer
+      }
+
 
         console.log("User Balance:", ethers.formatEther(balance), "BNB");
         console.log("Value in Wei Required:", valueInWei.toString());
         console.log("Contract Address:", CONTRACT_ADDRESS);
         console.log("Signer Address:", userAddress);
-        console.log("Referral ID:", referralId);
+        console.log("Referral ID:", refId);
 
         if (balance < valueInWei) {
             alert("❌ Insufficient BNB Balance! Please add funds.");
@@ -184,7 +181,7 @@ const Dashboard = () => {
         }
 
         // ✅ Use the extracted referral ID dynamically
-        const tx = await contract.register(referralId, userAddress, { value: valueInWei });
+        const tx = await contract.register(refId, userAddress, { value: valueInWei });
 
         await tx.wait();
 
@@ -227,8 +224,6 @@ const upgradeLevels = async () => {
     return;
     }
    
-
-  
 
   if (selectedLevels.length === 0) {
    
@@ -470,28 +465,31 @@ Learn how to configure a non-root public URL by running `npm run build`.
                     <div className="font-semibold">User ID:</div>
                     <div className="bg-gray-800 py-1 px-3 rounded-md">{userId?.toString()}</div>
                     <div className="font-semibold">Rank:</div>
-                    <div className="bg-gray-800 py-1 px-3 rounded-md">{rank}</div>
+                    <div className="bg-gray-800 py-1 px-3 rounded-md">{LEVEL_NAMES1[rank] || "Unknown"}</div>
                     <div className="font-semibold">Activation Date:</div>
                     <div className="bg-gray-800 py-1 px-3 rounded-md">{new Date(startTime * 1000).toLocaleString()}</div>
                     <div className="font-semibold">Referred By:</div>
                     <div className="bg-gray-800 py-1 px-3 rounded-md">{referrerId}</div>
                 </div>
+
+
+
             </div>
             
        
             <div className="flex flex-col items-center mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-lg shadow-lg">
     <h1 className="text-lg font-bold mb-4 text-yellow-400">Referral Link</h1>
     <div className="flex items-center bg-gray-800 p-3 rounded-md w-full">
-        <span 
-            className="text-sm bg-yellow-500 rounded-sm px-5 py-2 text-black break-words whitespace-normal w-full text-center cursor-pointer"
-            onClick={handleCopy}
-        >
-            {referralLink}
-        </span>
-        {copied && (
-            <span className="text-xs text-green-400 ml-3 whitespace-nowrap">Copied!</span>
-        )}
-    </div>
+    <span 
+        className="text-lg bg-yellow-500 rounded-sm px-5 py-2 text-black break-words whitespace-normal w-full text-center cursor-pointer font-semibold"
+        onClick={handleCopy}
+    >
+        {referralLink}
+    </span>
+    {copied && (
+        <span className="text-xs text-green-400 ml-3 whitespace-nowrap">Copied!</span>
+    )}
+</div>
 </div>
 
 
