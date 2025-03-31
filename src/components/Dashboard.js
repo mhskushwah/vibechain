@@ -9,18 +9,18 @@ import { useSearchParams } from "react-router-dom";
 /* global BigInt */
 
 const LEVELS = [
-   "0.006", "0.012", "0.024", "0.048", "0.096", "0.192",
+  "0.004", "0.006", "0.012", "0.024", "0.048", "0.096", "0.192",
   "0.384", "0.768", "1.536", "3.072", "6.144", "12.288", "24.576",
   "49.152", "98.304", "196.608"
 ];
 const LEVEL_NAMES = [
-  "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+  "PLAYER","STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 const LEVEL_NAMES1 = [
   "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 
-const PERCENTS = [ 5, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]; // Admin percentage
+const PERCENTS = [ 10,5, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]; // Admin percentage
 
 const Dashboard = () => {
     const [walletAddress, setWalletAddress] = useState("");
@@ -43,8 +43,36 @@ const Dashboard = () => {
     const [showRegisterPopup, setShowRegisterPopup] = useState(false);
     const [registrationOpen, setRegistrationOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [selectedLevels, setSelectedLevels] = useState([0]);
+    const [selectedLevels, setSelectedLevels] = useState([]);
     const [searchParams] = useSearchParams(); // URL से referral ID निकालने के लिए
+
+
+
+  
+    // ✅ Step 2: Detect Wallet Change
+    useEffect(() => {
+      if (window.ethereum) {
+        window.ethereum.on("accountsChanged", (accounts) => {
+          if (accounts.length > 0) {
+            console.log("Wallet switched:", accounts[0]);
+            setWalletAddress(accounts[0]);
+          } else {
+            console.log("Wallet disconnected");
+            setWalletAddress(null);
+          }
+        });
+      }
+    }, []);
+  
+    
+
+
+
+
+
+
+
+
 
 
 
@@ -101,6 +129,29 @@ const Dashboard = () => {
   }, [searchParams]);
 
 
+  useEffect(() => {
+    checkWalletConnection();
+  }, []);
+
+  const checkWalletConnection = async () => {
+    if (!window.ethereum) {
+      alert("🦊 MetaMask not found! Please install MetaMask.");
+      return;
+    }
+
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+      setWalletAddress(userAddress);
+
+      // ✅ Check user registration
+      checkUserRegistration(userAddress);
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+      alert("⚠️ Wallet connection failed! Please try again.");
+    }
+  };
 
 
 
@@ -119,15 +170,15 @@ const Dashboard = () => {
 
 
 
-    // ✅ Get ref id from URL
-    useEffect(() => {
-        const queryParams = new URLSearchParams(window.location.search);
-        const urlRef = queryParams.get("ref");
-        if (urlRef) {
-            setRef(Number(urlRef));
-            localStorage.setItem("referrerId", urlRef);
-        }
-    }, []);
+      // ✅ Get ref id from URL
+      useEffect(() => {
+          const queryParams = new URLSearchParams(window.location.search);
+          const urlRef = queryParams.get("ref");
+          if (urlRef) {
+              setRef(Number(urlRef));
+              localStorage.setItem("referrerId", urlRef);
+          }
+      }, []);
 
     // ✅ Auto connect if wallet already saved
     useEffect(() => {
@@ -198,96 +249,112 @@ const Dashboard = () => {
 
     const checkUserRegistration = async (wallet) => {
       try {
-          const provider = new BrowserProvider(window.ethereum);
+          const provider = new ethers.BrowserProvider(window.ethereum);
           const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
           const userId = await contract.id(wallet);
   
           if (userId > 0) {
               setIsRegistered(true);
           } else {
-              let refId = localStorage.getItem("referrerId"); // Get stored referral ID
-              
+              setIsRegistered(false);
+  
+              // ✅ Get stored referral ID from localStorage
+              let refId = localStorage.getItem("referrerId");
+              console.log("Referral ID:", refId);
+              // ✅ Ensure referral ID is valid before showing the popup
               if (!refId || isNaN(refId) || Number(refId) <= 0) {
                   alert("❌ Not a valid referral link! Please use a valid referral.");
-                  return; // ❌ Stop execution if invalid referrer
+                  return; // ❌ STOP HERE! Do NOT show popup
               }
   
-              setIsRegistered(false);
-              setShowRegisterPopup(true); // 🟣 Show popup for valid referral only
+              setShowRegisterPopup(true); // ✅ Show popup only for valid referrals
           }
+          
+          
       } catch (error) {
-          console.error("Error checking registration", error);
+          console.error("Error checking registration:", error);
+          alert("⚠️ Error checking registration! Try again.");
       }
   };
   
-  const handleRegister = async () => {
-    if (!walletAddress) return alert("Connect wallet first!");
-
-    setLoading(true);
-
-    try {
+  
+    const handleRegister = async () => {
+      if (!walletAddress) {
+        alert("❌ Connect wallet first!");
+        return;
+      }
+  
+      setLoading(true);
+  
+      try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
+  
         const userAddress = await signer.getAddress();
         const balance = await provider.getBalance(userAddress);
         const valueInWei = ethers.parseUnits("0.0044", "ether"); // Convert BNB to Wei
-
-        // ✅ Step 1: Get Referral ID from URL
-        let refId = localStorage.getItem("referrerId"); // Get stored referral ID
-
-        if (!refId || isNaN(refId) || Number(refId ) <= 0 ) {
+  
+        // ✅ Get Referral ID from localStorage
+        let refId = localStorage.getItem("referrerId");
+  
+        if (!refId || isNaN(refId) || Number(refId) <= 0) {
           alert("❌ Not a valid referral link! Please use a valid referral.");
-          return; // ❌ Stop execution if invalid referrer
-      }
-
-
+          return;
+        }
+  
         console.log("User Balance:", ethers.formatEther(balance), "BNB");
         console.log("Value in Wei Required:", valueInWei.toString());
         console.log("Contract Address:", CONTRACT_ADDRESS);
         console.log("Signer Address:", userAddress);
         console.log("Referral ID:", refId);
-
+  
         if (balance < valueInWei) {
-            alert("❌ Insufficient BNB Balance! Please add funds.");
-            setLoading(false);
-            return;
+          alert("❌ Insufficient BNB Balance! Please add funds.");
+          setLoading(false);
+          return;
         }
-
-        // ✅ Use the extracted referral ID dynamically
+  
+        // ✅ Register user with contract
         const tx = await contract.register(refId, userAddress, { value: valueInWei });
-
+  
         await tx.wait();
-
-        alert("Registration Successful ✅");
-    } catch (err) {
+        alert("✅ Registration Successful!");
+        setIsRegistered(true);
+        setShowRegisterPopup(false);
+      } catch (err) {
         console.error("❌ Registration failed:", err);
-        alert("Registration Failed ❌");
-    } finally {
+        alert("❌ Registration Failed! Please try again.");
+      } finally {
         setLoading(false);
-    }
-};
-
+      }
+    };
 
 
   
   
-
-const toggleLevel = (index) => {
-  if (index < rank) return; // Prevent selecting already activated levels
-
-  if (selectedLevels.includes(index)) {
-    if (selectedLevels[selectedLevels.length - 1] === index) {
-      setSelectedLevels(selectedLevels.slice(0, -1));
-    }
-  } else {
-    if (selectedLevels.length === 0 || selectedLevels[selectedLevels.length - 1] === index - 1) {
-      setSelectedLevels([...selectedLevels, index]);
-    }
-  }
-};
-
+    const toggleLevel = (index) => {
+      console.log("Clicked index:", index);
+      console.log("Selected Levels Before:", selectedLevels);
+    
+      if (index < rank) return; // Already activated levels ko ignore karo
+    
+      // Agar level already selected hai, to usko deselect karo
+      if (selectedLevels.includes(index)) {
+        setSelectedLevels(selectedLevels.filter((lvl) => lvl !== index));
+      } else {
+        // Sirf sequential order me hi select hone de
+        if (
+          (selectedLevels.length === 0 && index === Number(rank)) || 
+          selectedLevels[selectedLevels.length - 1] === index - 1
+        ) {
+          setSelectedLevels([...selectedLevels, index]);
+        }
+      }
+    
+      console.log("Selected Levels After:", selectedLevels);
+    };
+    
 
 const checkUserRegistered = async () => {
   if (!window.ethereum) {
@@ -351,7 +418,9 @@ const upgradeLevels = async () => {
     await tx.wait();
     alert("Upgrade Successful!");
     setSelectedLevels([]);
-  } catch (error) {
+  } 
+  
+  catch (error) {
     console.error("Upgrade Error:", error);
     alert("Upgrade Failed! Check console.");
   } finally {
@@ -360,18 +429,9 @@ const upgradeLevels = async () => {
 };
 
 
-
-
-
-
-
-
-
-
 const totalAmount = selectedLevels.reduce((acc, idx) => acc + parseFloat(LEVELS[idx]), 0);
 const totalAdminCharge = selectedLevels.reduce((acc, idx) => {
-  return acc + (parseFloat(LEVELS[idx]) * PERCENTS[idx]) / 100;
-}, 0);
+  return acc + (parseFloat(LEVELS[idx]) * PERCENTS[idx]) / 100;}, 0);
 const finalAmount = totalAmount + totalAdminCharge;
 
     // ✅ Referral Link
@@ -631,48 +691,43 @@ Learn how to configure a non-root public URL by running `npm run build`.
 
 
 
+
         <div className="p-4 md:p-8 flex flex-col items-center bg-black min-h-screen text-white">
-  {/* Title */}
   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-yellow-400 mb-6 tracking-widest text-center">
     🚀 PACKAGES
   </h2>
 
-  {/* Responsive Levels Grid (2 Col on Mobile, 3 on Desktop) */}
   <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-4xl">
     {LEVELS.map((amount, index) => {
+      if (index < rank) return null; // Hide already activated levels
       const adminCharge = (parseFloat(amount) * PERCENTS[index]) / 100;
+      
       const totalAmount = (parseFloat(amount) + adminCharge).toFixed(4);
       const isSelected = selectedLevels.includes(index);
-      const isCurrentOrBelow = index < rank; // Check if it's the current or lower level
-      const isNextInSequence = selectedLevels.length === 0 || selectedLevels[selectedLevels.length - 1] === index - 1;
-
+      const isNextInSequence = (selectedLevels.length === 0 && index === (Number(rank)) ) || selectedLevels[selectedLevels.length - 1] === index - 1;
       return (
         <motion.button
           key={index}
           onClick={() => toggleLevel(index)}
-          whileHover={isNextInSequence && !isCurrentOrBelow ? { scale: 1.1 } : {}}
-          whileTap={isNextInSequence && !isCurrentOrBelow ? { scale: 0.95 } : {}}
-          disabled={isCurrentOrBelow || (!isNextInSequence && !isSelected)}
+          whileHover={isNextInSequence ? { scale: 1.1 } : {}}
+          whileTap={isNextInSequence ? { scale: 0.95 } : {}}
+          disabled={ !isNextInSequence && !isSelected} // Lock levels that are not unlocked
           className={`px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex flex-col items-center text-xs sm:text-sm md:text-base rounded-full transition-all duration-300 ease-in-out 
           shadow-md border-2 text-center font-extrabold transform hover:scale-105 active:scale-95
-          ${isCurrentOrBelow
-            ? "bg-gray-500 text-gray-300 border-gray-600 cursor-not-allowed"
-            : isSelected  
+          ${isSelected
             ? "bg-yellow-500 text-black font-bold border-yellow-600 scale-105 shadow-yellow-600"
             : isNextInSequence
             ? "bg-gray-800 text-yellow-300 hover:bg-yellow-500 hover:text-black hover:border-yellow-600"
             : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
           }`}
         >
-          {isCurrentOrBelow ? (
-            <Lock className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-gray-300" />
-          ) : isSelected ? (
-            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-black" />
-          ) : isNextInSequence ? (
-            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-yellow-400" />
-          ) : (
-            <Lock className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 mb-1 text-gray-400" />
-          )}
+       {isSelected ? (
+                <CheckCircle className="h-5 w-5 mb-1 text-black" />
+              ) : isNextInSequence ? (
+                <CheckCircle className="h-5 w-5 mb-1 text-yellow-400" />
+              ) : (
+                <Lock className="h-5 w-5 mb-1 text-gray-400" />
+              )}
           <span className="font-semibold">{LEVEL_NAMES[index]}</span>
           <span className="text-xs sm:text-sm mt-1">{totalAmount} BNB</span>
         </motion.button>
@@ -680,10 +735,9 @@ Learn how to configure a non-root public URL by running `npm run build`.
     })}
   </div>
 
-  {/* Upgrade Button (Responsive Sizing & Placement) */}
   <motion.button
     onClick={upgradeLevels}
-    disabled={loading || selectedLevels.length === 0}
+    disabled={loading || selectedLevels.length > 0}
     whileHover={{ scale: 1.1 }}
     whileTap={{ scale: 0.95 }}
     className={`mt-6 sm:mt-8 px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex items-center gap-3 text-sm sm:text-base md:text-lg font-semibold rounded-full transition-all duration-300 ease-in-out 
@@ -697,10 +751,6 @@ Learn how to configure a non-root public URL by running `npm run build`.
     {loading ? "Processing..." : `Upgrade for ${finalAmount.toFixed(5)} BNB`}
   </motion.button>
 </div>
-
-
-
-
 
 <div className="flex flex-wrap justify-center gap-6 mt-6 px-4">
     {[
@@ -725,10 +775,6 @@ Learn how to configure a non-root public URL by running `npm run build`.
         </div>
     ))}
 </div>
-
-
-
-
 
 
 
