@@ -6,8 +6,6 @@ import { motion } from "framer-motion";
 import { FaLink, FaCopy, FaCheckCircle } from "react-icons/fa";
 import { parseUnits, isAddress } from "ethers";
 import { parseEther } from "ethers";
-import { useSearchParams } from "react-router-dom"; // Import for URL handling
-
 
 /* global BigInt */
 
@@ -147,14 +145,16 @@ const Dashboard = () => {
       }
   };
   
+
+
+
   const handleRegister = async () => {
     if (!walletAddress) return alert("Connect wallet first!");
 
     setLoading(true);
 
     try {
-      const BSC_RPC_URL = "https://bsc-dataseed.binance.org/";
-        const provider = new ethers.BrowserProvider(BSC_RPC_URL);
+        const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
@@ -162,21 +162,10 @@ const Dashboard = () => {
         const balance = await provider.getBalance(userAddress);
         const valueInWei = ethers.parseUnits("0.0044", "ether"); // Convert BNB to Wei
 
-        // ✅ Step 1: Get Referral ID from URL
-        const searchParams = new URLSearchParams(window.location.search);
-        const referralId = searchParams.get("ref"); // Extract "ref" from URL
-
-        if (!referralId) {
-            alert("❌ No referral ID found! Please use a valid referral link.");
-            setLoading(false);
-            return;
-        }
-
         console.log("User Balance:", ethers.formatEther(balance), "BNB");
         console.log("Value in Wei Required:", valueInWei.toString());
         console.log("Contract Address:", CONTRACT_ADDRESS);
         console.log("Signer Address:", userAddress);
-        console.log("Referral ID:", referralId);
 
         if (balance < valueInWei) {
             alert("❌ Insufficient BNB Balance! Please add funds.");
@@ -184,11 +173,13 @@ const Dashboard = () => {
             return;
         }
 
-        // ✅ Use the extracted referral ID dynamically
-        const tx = await contract.register(referralId, userAddress, { value: valueInWei });
+        // ✅ Fix: Call register() without arguments, but include value directly
+        const tx = await contract.register({ value: valueInWei });
 
         await tx.wait();
 
+        setRegistrationOpen(false);
+        getUserData(walletAddress);
         alert("Registration Successful ✅");
     } catch (err) {
         console.error("❌ Registration failed:", err);
