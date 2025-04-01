@@ -45,38 +45,9 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false);
     const [selectedLevels, setSelectedLevels] = useState([]);
     const [searchParams] = useSearchParams(); // URL से referral ID निकालने के लिए
-
-
-
   
-    // ✅ Step 2: Detect Wallet Change
-    useEffect(() => {
-      if (window.ethereum) {
-        window.ethereum.on("accountsChanged", (accounts) => {
-          if (accounts.length > 0) {
-            console.log("Wallet switched:", accounts[0]);
-            setWalletAddress(accounts[0]);
-          } else {
-            console.log("Wallet disconnected");
-            setWalletAddress(null);
-          }
-        });
-      }
-    }, []);
+   
   
-    
-
-
-
-
-
-
-
-
-
-
-
-
     const getWalletDetails = async () => {
       if (window.ethereum) {
           try {
@@ -715,8 +686,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
           whileHover={isNextInSequence ? { scale: 1.1 } : {}}
           whileTap={isNextInSequence ? { scale: 0.95 } : {}}
           disabled={!isNextInSequence && !isSelected} // Lock levels that are not unlocked
-          className={`px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex flex-col items-center text-xs sm:text-sm md:text-base rounded-full transition-all duration-300 ease-in-out 
-          shadow-md border-2 text-center font-extrabold transform hover:scale-105 active:scale-95
+          className={`v
           ${isSelected
             ? "bg-yellow-500 text-black font-bold border-yellow-600 scale-105 shadow-yellow-600"
             : isNextInSequence
