@@ -235,6 +235,7 @@ const Dashboard = () => {
   
           if (userId > 0) {
               setIsRegistered(true);
+              setShowRegisterPopup(false); // 🛑 Already registered, popup close
               return true;
           } else {
               setIsRegistered(false);
@@ -244,12 +245,12 @@ const Dashboard = () => {
               console.log("Referral ID:", refId);
   
               // ✅ Ensure referral ID is valid before showing the popup
-              if (!refId || isNaN (Number(refId)) || Number(refId) <= 0) {
+              if (!refId || isNaN(Number(refId)) || Number(refId) <= 0) {
                   alert("❌ Not a valid referral link! Please use a valid referral.");
                   return false; // ❌ STOP HERE! Do NOT show popup
               }
   
-              setShowRegisterPopup(true); // ✅ Show popup only for valid referrals
+              setShowRegisterPopup(true); // ✅ Show popup only if NOT registered
               return false;
           }
       } catch (error) {

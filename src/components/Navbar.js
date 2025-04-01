@@ -8,14 +8,15 @@ const Navbar = () => {
   const [scrollingDown, setScrollingDown] = useState(false);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const location = useLocation();
-  const navigate = useNavigate(); // Use useNavigate for programmatic navigation
+  const navigate = useNavigate();
 
   // Logout function
   const handleLogout = () => {
     console.log("User logged out due to tab close or inactivity.");
-    localStorage.removeItem('userToken'); // Example: Remove user session
-    sessionStorage.clear(); // Clear session data
-    navigate('/logout'); // Redirect to logout page
+    localStorage.removeItem('userToken');
+    sessionStorage.clear();
+    setMenuOpen(false); // Close menu after logout
+    navigate('/logout');
   };
 
   // Handle scrolling
@@ -23,6 +24,11 @@ const Navbar = () => {
     const currentScrollPos = window.pageYOffset;
     setScrollingDown(currentScrollPos > prevScrollPos);
     setPrevScrollPos(currentScrollPos);
+  };
+
+  // Close navigation menu
+  const closeMenu = () => {
+    setMenuOpen(false); // Close the menu
   };
 
   // Handle logout when the tab is closed or inactive
@@ -33,7 +39,7 @@ const Navbar = () => {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        handleLogout(); // Logout when the tab is hidden
+        handleLogout();
       }
     };
 
@@ -54,7 +60,7 @@ const Navbar = () => {
       <div className="navbar-container">
         {/* Logo */}
         <div className="logo">
-          <a href="https://vibechain.vercel.app/" className="flex items-center">
+          <a href="https://vibechain.vercel.app/" className="flex items-center" onClick={closeMenu}>
             <img src="assets/RiseBNB_files/logo.png" className="h-14" alt="RiseBNB Logo" />
           </a>
         </div>
@@ -66,12 +72,12 @@ const Navbar = () => {
 
         {/* Navigation Links */}
         <ul className={menuOpen ? 'nav-links active' : 'nav-links'}>
-          <li><Link to="/dashboard" className="nav-link"><FaTachometerAlt /> Dashboard</Link></li>
-          <li><Link to="/myteam" className="nav-link"><FaUsers /> My Team</Link></li>
-          <li><Link to="/communitytree" className="nav-link"><FaTree /> Community Tree</Link></li>
-          <li><Link to="/communityinfo" className="nav-link"><FaInfoCircle /> Community Info</Link></li>
-          <li><Link to="/recentincome" className="nav-link"><FaTachometerAlt /> Recent Income</Link></li>
-          <li><Link to="/flashout" className="nav-link"><FaDollarSign /> Claim Income</Link></li>
+          <li><Link to="/dashboard" className="nav-link" onClick={closeMenu}><FaTachometerAlt /> Dashboard</Link></li>
+          <li><Link to="/myteam" className="nav-link" onClick={closeMenu}><FaUsers /> My Team</Link></li>
+          <li><Link to="/communitytree" className="nav-link" onClick={closeMenu}><FaTree /> Community Tree</Link></li>
+          <li><Link to="/communityinfo" className="nav-link" onClick={closeMenu}><FaInfoCircle /> Community Info</Link></li>
+          <li><Link to="/recentincome" className="nav-link" onClick={closeMenu}><FaTachometerAlt /> Recent Income</Link></li>
+          <li><Link to="/flashout" className="nav-link" onClick={closeMenu}><FaDollarSign /> Claim Income</Link></li>
           <li><button className="nav-link logout-btn" onClick={handleLogout}><FaSignOutAlt /> Logout</button></li>
         </ul>
       </div>
