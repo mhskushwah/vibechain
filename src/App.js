@@ -13,22 +13,6 @@ import './components/Navbar.css';  // Agar aap chahein toh styling yahan rakh sa
 import Logout from './components/Logout';
 import Flashout from './components/Flashout';
 
-function WalletListener() {
-  useEffect(() => {
-    const detectWalletChange = async () => {
-      if (window.ethereum) {
-        window.ethereum.on("accountsChanged", (accounts) => {
-          if (accounts.length > 0) {
-            window.location.href = "https://vibechain.vercel.app/"; // Auto Redirect
-          }
-        });
-      }
-    };
-    detectWalletChange();
-  }, []);
-
-  return null; // This component does not render anything
-}
 
 
 
@@ -36,7 +20,6 @@ function WalletListener() {
 function App() {
   return (
     <Router>
-            <WalletListener />  {/* Wallet Change Detector */}
 
       <Navbar />
       <Routes>

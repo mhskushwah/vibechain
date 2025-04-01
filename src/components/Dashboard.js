@@ -731,15 +731,19 @@ Learn how to configure a non-root public URL by running `npm run build`.
           ) : (
             <Lock className="h-5 w-5 mb-1 text-gray-400" />
           )}
-          <span className="font-semibold">{LEVEL_NAMES[index]}</span>
-          <span className="text-xs sm:text-sm mt-1">{totalAmount} BNB</span>
+          <span className="font-bold text-4xl sm:text-xl md:text-2xl text-center block">
+  {LEVEL_NAMES[index]}
+</span>
+<span className="font-bold text-lg sm:text-xl md:text-xl text-center block">
+  {totalAmount} BNB
+</span>
         </motion.button>
       );
     })}
   </div>
 
   {/* Adjusting Margin for Button */}
-  {rank < 17 ? (
+ {rank < 17 ? (
   <motion.button
     onClick={upgradeLevels}
     disabled={loading || selectedLevels.length === 0}
