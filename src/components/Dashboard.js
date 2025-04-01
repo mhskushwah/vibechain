@@ -78,7 +78,11 @@ const Dashboard = () => {
           setRef(refIdFromUrl);
           localStorage.setItem("referrerId", refIdFromUrl);
       }
-  }, [searchParams]);
+
+      if (walletAddress) {
+        getWalletDetails(walletAddress); // Ensure correct wallet details are fetched
+    }
+  }, [searchParams, walletAddress]);
 
   // Auto connect wallet if already saved in localStorage
   useEffect(() => {
@@ -207,7 +211,7 @@ const Dashboard = () => {
               console.log("Referral ID:", refId);
   
               // ✅ Ensure referral ID is valid before showing the popup
-              if (!refId || isNaN(refId) || Number(refId) <= 0) {
+              if (!refId || isNaN (Number(refId)) || Number(refId) <= 0) {
                   alert("❌ Not a valid referral link! Please use a valid referral.");
                   return false; // ❌ STOP HERE! Do NOT show popup
               }
