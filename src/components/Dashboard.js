@@ -45,83 +45,65 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false);
     const [selectedLevels, setSelectedLevels] = useState([]);
     const [searchParams] = useSearchParams(); // URL से referral ID निकालने के लिए
-  
-   
-  
-    const getWalletDetails = async () => {
-      if (window.ethereum) {
-          try {
-              const provider = new ethers.BrowserProvider(window.ethereum);
-              const signer = await provider.getSigner();
-              const address = await signer.getAddress();
-              setWalletAddress(address);
 
-              // ✅ Wallet Balance Fetch करके BNB में Convert करो
-              const balance = await provider.getBalance(address);
-              setWalletBalance(ethers.formatEther(balance));
 
-          } catch (error) {
-              console.error("Wallet fetch error:", error);
+     // Detect wallet connection change
+     useEffect(() => {
+      const handleAccountsChanged = (accounts) => {
+          if (accounts.length > 0) {
+              setWalletAddress(accounts[0]);
+              getWalletDetails(accounts[0]);
+          } else {
+              setWalletAddress("");
+              setWalletBalance("0");
+              setIsRegistered(false); // Reset user data when wallet is disconnected
           }
-      } else {
-          console.log("No Ethereum wallet detected!");
-      }
-  };
-
-  // ✅ Wallet Change Listener (Real-Time Update)
-  useEffect(() => {
-      getWalletDetails(); // Page Load होते ही Wallet चेक करो
+      };
 
       if (window.ethereum) {
-          window.ethereum.on("accountsChanged", (accounts) => {
-              if (accounts.length > 0) {
-                  setWalletAddress(accounts[0]);
-                  getWalletDetails();
-              } else {
-                  setWalletAddress("");
-                  setWalletBalance("0");
-              }
-          });
+          window.ethereum.on("accountsChanged", handleAccountsChanged);
       }
 
       return () => {
           if (window.ethereum) {
-              window.ethereum.removeListener("accountsChanged", getWalletDetails);
+              window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
           }
       };
   }, []);
 
-  // ✅ Referral ID Handle करो
+  // Get referral ID from URL
   useEffect(() => {
       const refIdFromUrl = searchParams.get("ref");
       if (refIdFromUrl) {
           setRef(refIdFromUrl);
+          localStorage.setItem("referrerId", refIdFromUrl);
       }
   }, [searchParams]);
 
-
+  // Auto connect wallet if already saved in localStorage
   useEffect(() => {
-    checkWalletConnection();
+      const wallet = localStorage.getItem("wallet");
+      if (wallet) {
+          setWalletAddress(wallet);
+          getWalletDetails(wallet);  // Fetch details for saved wallet
+      }
   }, []);
 
-  const checkWalletConnection = async () => {
-    if (!window.ethereum) {
-      alert("🦊 MetaMask not found! Please install MetaMask.");
-      return;
-    }
+  // Fetch wallet details including balance
+  const getWalletDetails = async (wallet) => {
+      if (!window.ethereum) {
+          alert("🦊 MetaMask not found! Please install MetaMask.");
+          return;
+      }
 
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const userAddress = await signer.getAddress();
-      setWalletAddress(userAddress);
-
-      // ✅ Check user registration
-      checkUserRegistration(userAddress);
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
-      alert("⚠️ Wallet connection failed! Please try again.");
-    }
+      try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const balance = await provider.getBalance(wallet);
+          setWalletBalance(ethers.formatEther(balance)); 
+          getUserData(wallet); // Fetch user data after wallet balance
+      } catch (error) {
+          console.error("Error fetching wallet details:", error);
+      }
   };
 
 
@@ -132,24 +114,6 @@ const Dashboard = () => {
 
 
 
-
-
-
-
-
-
-
-
-
-      // ✅ Get ref id from URL
-      useEffect(() => {
-          const queryParams = new URLSearchParams(window.location.search);
-          const urlRef = queryParams.get("ref");
-          if (urlRef) {
-              setRef(Number(urlRef));
-              localStorage.setItem("referrerId", urlRef);
-          }
-      }, []);
 
     // ✅ Auto connect if wallet already saved
     useEffect(() => {
@@ -220,87 +184,111 @@ const Dashboard = () => {
 
     const checkUserRegistration = async (wallet) => {
       try {
+          if (!window.ethereum) {
+              alert("🦊 Please install MetaMask!");
+              return false;
+          }
+  
           const provider = new ethers.BrowserProvider(window.ethereum);
           const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+          
+          // 🔹 Check if user has a valid ID in the contract
           const userId = await contract.id(wallet);
+          console.log("User ID:", userId);
   
           if (userId > 0) {
               setIsRegistered(true);
+              return true;
           } else {
               setIsRegistered(false);
   
               // ✅ Get stored referral ID from localStorage
               let refId = localStorage.getItem("referrerId");
               console.log("Referral ID:", refId);
+  
               // ✅ Ensure referral ID is valid before showing the popup
               if (!refId || isNaN(refId) || Number(refId) <= 0) {
                   alert("❌ Not a valid referral link! Please use a valid referral.");
-                  return; // ❌ STOP HERE! Do NOT show popup
+                  return false; // ❌ STOP HERE! Do NOT show popup
               }
   
               setShowRegisterPopup(true); // ✅ Show popup only for valid referrals
+              return false;
           }
-          
-          
       } catch (error) {
-          console.error("Error checking registration:", error);
-          alert("⚠️ Error checking registration! Try again.");
+          console.error("⚠️ Error checking registration:", error);
+          alert("❌ Error checking registration! Try again.");
+          return false;
       }
   };
   
+  const handleRegister = async () => {
+      if (!window.ethereum) {
+          alert("🦊 Please install MetaMask!");
+          return;
+      }
   
-    const handleRegister = async () => {
       if (!walletAddress) {
-        alert("❌ Connect wallet first!");
-        return;
+          alert("❌ Connect wallet first!");
+          return;
       }
   
       setLoading(true);
   
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
   
-        const userAddress = await signer.getAddress();
-        const balance = await provider.getBalance(userAddress);
-        const valueInWei = ethers.parseUnits("0.0044", "ether"); // Convert BNB to Wei
+          const userAddress = await signer.getAddress();
+          const balance = await provider.getBalance(userAddress);
+          const valueInWei = ethers.parseUnits("0.0044", "ether"); // Convert BNB to Wei
   
-        // ✅ Get Referral ID from localStorage
-        let refId = localStorage.getItem("referrerId");
+          // ✅ Get Referral ID from localStorage
+          let refId = localStorage.getItem("referrerId");
   
-        if (!refId || isNaN(refId) || Number(refId) <= 0) {
-          alert("❌ Not a valid referral link! Please use a valid referral.");
-          return;
-        }
+          if (!refId || isNaN(refId) || Number(refId) <= 0) {
+              alert("❌ Not a valid referral link! Please use a valid referral.");
+              setLoading(false);
+              return;
+          }
   
-        console.log("User Balance:", ethers.formatEther(balance), "BNB");
-        console.log("Value in Wei Required:", valueInWei.toString());
-        console.log("Contract Address:", CONTRACT_ADDRESS);
-        console.log("Signer Address:", userAddress);
-        console.log("Referral ID:", refId);
+          console.log("User Balance:", ethers.formatEther(balance), "BNB");
+          console.log("Value in Wei Required:", valueInWei.toString());
+          console.log("Contract Address:", CONTRACT_ADDRESS);
+          console.log("Signer Address:", userAddress);
+          console.log("Referral ID:", refId);
   
-        if (balance < valueInWei) {
-          alert("❌ Insufficient BNB Balance! Please add funds.");
-          setLoading(false);
-          return;
-        }
+          // 🔹 Check if the user already exists before registration
+          const isRegistered = await checkUserRegistration(userAddress);
+          if (isRegistered) {
+              alert("✅ You are already registered!");
+              setLoading(false);
+              return;
+          }
   
-        // ✅ Register user with contract
-        const tx = await contract.register(refId, userAddress, { value: valueInWei });
+          // 🔹 Check for sufficient balance
+          if (balance < valueInWei) {
+              alert("❌ Insufficient BNB Balance! Please add funds.");
+              setLoading(false);
+              return;
+          }
   
-        await tx.wait();
-        alert("✅ Registration Successful!");
-        setIsRegistered(true);
-        setShowRegisterPopup(false);
+          // ✅ Register user with contract
+          const tx = await contract.register(refId, userAddress, { value: valueInWei });
+  
+          await tx.wait();
+          alert("✅ Registration Successful!");
+          setIsRegistered(true);
+          setShowRegisterPopup(false);
       } catch (err) {
-        console.error("❌ Registration failed:", err);
-        alert("❌ Registration Failed! Please try again.");
+          console.error("❌ Registration failed:", err);
+          alert("❌ Registration Failed! Please try again.");
       } finally {
-        setLoading(false);
+          setLoading(false);
       }
-    };
-
+  };
+  
 
   
   
@@ -327,77 +315,102 @@ const Dashboard = () => {
     };
     
 
-const checkUserRegistered = async () => {
-  if (!window.ethereum) {
-      alert("Please install MetaMask!");
-      return;
-  }
-
-  try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-      const userInfo = await contract.userInfo(userId);
-
-      console.log("User Info:", userInfo);
-
-      if (userInfo.referrer === 0) {
-          alert("User is NOT registered. Please register first.");
+    const checkUserRegistered = async () => {
+      if (!window.ethereum) {
+          alert("🦊 Please install MetaMask to continue!");
           return false;
       }
-      return true;
-  } catch (error) {
-      console.error("Error fetching user info:", error);
-      return false;
-  }
-};
-
-const upgradeLevels = async () => {
-  if (!window.ethereum) {
-    alert("Please install MetaMask!");
-    return;
-  }
-
-  const isRegistered = await checkUserRegistered();  // 🛠️ Pehle user check karo
-  if (!isRegistered) return; // Agar registered nahi hai to upgrade nahi hoga
-
-  if (selectedLevels.length === 0) {
-    alert("Please select at least one level to upgrade!");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-    const totalAmount = selectedLevels.reduce((acc, idx) => acc + parseFloat(LEVELS[idx]), 0);
-    const totalAdminCharge = selectedLevels.reduce((acc, idx) => {
-      return acc + (parseFloat(LEVELS[idx]) * PERCENTS[idx]) / 100;
-    }, 0);
-
-    const finalAmount = totalAmount + totalAdminCharge;
-    const totalBNB = ethers.parseEther(finalAmount.toString());
-
-    console.log(`Upgrading ${selectedLevels.length} levels for User ID: ${userId}`);
-    console.log(`Total Cost: ${ethers.formatEther(totalBNB)} BNB`);
-
-    const tx = await contract.upgrade(userId, selectedLevels.length, { value: totalBNB });
-
-    await tx.wait();
-    alert("Upgrade Successful!");
-    setSelectedLevels([]);
-  } 
   
-  catch (error) {
-    console.error("Upgrade Error:", error);
-    alert("Upgrade Failed! Check console.");
-  } finally {
-    setLoading(false);
-  }
+      try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+  
+          // 🔹 Wallet Address Fetch
+          const walletAddress = await signer.getAddress();
+  
+          // ✅ Try fetching userInfo (Change according to contract structure)
+          const userInfo = await contract.userInfo(walletAddress); 
+  
+          // ✅ Check if user exists (Adjust according to contract return type)
+          if (!userInfo || userInfo.referrer === 0) { 
+              alert("❌ You are not registered! Please register first to upgrade your level.");
+              return false;
+          }
+  
+          return true; // ✅ User registered hai
+      } catch (error) {
+          console.error("⚠️ Error checking user registration:", error);
+          alert("❌ Error checking user registration. Please try again!");
+          return false;
+      }
+  };
+  
+  const upgradeLevels = async () => {
+    if (!window.ethereum) {
+        alert("🦊 Please install MetaMask!");
+        return;
+    }
+
+    try {
+        setLoading(true);
+
+        // 🛠️ Pehle user check karo
+        const isRegistered = await checkUserRegistered();
+        if (!isRegistered) {
+            setLoading(false);
+            return; // ❌ Agar registered nahi hai toh upgrade nahi hoga
+        }
+
+        if (selectedLevels.length === 0) {
+            alert("⚠️ Please select at least one level to upgrade!");
+            setLoading(false);
+            return;
+        }
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+        const totalAmount = selectedLevels.reduce((acc, idx) => acc + parseFloat(LEVELS[idx]), 0);
+        const totalAdminCharge = selectedLevels.reduce((acc, idx) => {
+            return acc + (parseFloat(LEVELS[idx]) * PERCENTS[idx]) / 100;
+        }, 0);
+
+        const finalAmount = totalAmount + totalAdminCharge;
+        const totalBNB = ethers.parseEther(finalAmount.toString());
+
+        // 🔹 🛠️ Wallet Balance Check (Before Sending Transaction)
+        const walletAddress = await signer.getAddress();
+        const balance = await provider.getBalance(walletAddress);
+
+        if (balance < totalBNB) {
+            alert(`❌ Insufficient funds! You need at least ${ethers.formatEther(totalBNB)} BNB.`);
+            setLoading(false);
+            return;
+        }
+
+        console.log(`Upgrading ${selectedLevels.length} levels for User ID: ${userId}`);
+        console.log(`Total Cost: ${ethers.formatEther(totalBNB)} BNB`);
+
+        // ✅ Upgrade Levels
+        const tx = await contract.upgrade(userId, selectedLevels.length, { value: totalBNB });
+
+        await tx.wait();
+        alert("✅ Upgrade Successful!");
+        setSelectedLevels([]);
+    } catch (error) {
+        console.error("⚠️ Upgrade Error:", error);
+        if (error.message.includes("insufficient funds")) {
+            alert("❌ Upgrade Failed! You don't have enough BNB.");
+        } else {
+            alert("❌ Upgrade Failed! Please check the console for more details.");
+        }
+    } finally {
+        setLoading(false);
+    }
 };
+
 
 
 const totalAmount = selectedLevels.reduce((acc, idx) => acc + parseFloat(LEVELS[idx]), 0);
@@ -686,7 +699,8 @@ Learn how to configure a non-root public URL by running `npm run build`.
           whileHover={isNextInSequence ? { scale: 1.1 } : {}}
           whileTap={isNextInSequence ? { scale: 0.95 } : {}}
           disabled={!isNextInSequence && !isSelected} // Lock levels that are not unlocked
-          className={`v
+          className={`px-8 py-4 sm:px-8 sm:py-4 md:px-10 md:py-5 flex flex-col items-center text-xs sm:text-sm md:text-base rounded-full transition-all duration-300 ease-in-out 
+          shadow-md border-2 text-center font-extrabold transform hover:scale-105 active:scale-95
           ${isSelected
             ? "bg-yellow-500 text-black font-bold border-yellow-600 scale-105 shadow-yellow-600"
             : isNextInSequence
@@ -704,7 +718,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
           <span className="font-bold text-4xl sm:text-xl md:text-2xl text-center block">
   {LEVEL_NAMES[index]}
 </span>
-<span className="font-bold text-lg sm:text-xl md:text-xl text-center block">
+<span className="font-bold text-lg sm:text-xl md:text-2xl text-center block">
   {totalAmount} BNB
 </span>
         </motion.button>
