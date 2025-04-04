@@ -1,10 +1,76 @@
 import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { BrowserProvider, ethers } from "ethers";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
+
+const LEVEL_NAMES1 = [
+  "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", 
+  "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+];
 
 function CommunityInfo() {
+  const [walletAddress, setWalletAddress] = useState("");
+  const [userId, setUserId] = useState(null);
+  const [selectedLevel, setSelectedLevel] = useState(0);
+  const [matrixUsers, setMatrixUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-    const navigate = useNavigate(); // 🔹 Navigation Hook
+  useEffect(() => {
+    const wallet = localStorage.getItem("wallet");
+    if (wallet) {
+      setWalletAddress(wallet);
+    }
+  }, []);
 
- 
+  useEffect(() => {
+    if (walletAddress) {
+      fetchUserId(walletAddress);
+    }
+  }, [walletAddress]);
+
+  const fetchUserId = async (wallet) => {
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      const userId = await contract.id(wallet);
+      setUserId(userId.toString()); // Convert BigInt to string
+    } catch (error) {
+      console.error("Error fetching user ID:", error);
+    }
+  };
+
+  const fetchMatrixUsers = async (userId, level) => {
+    try {
+      setLoading(true);
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+      console.log(`Fetching Matrix Users for User ID: ${userId}, Level: ${level}`);
+      const users = await contract.getMatrixUsers(userId, level);
+
+      const formattedUsers = users.map((user, index) => ({
+        serialNumber: index + 1,
+        id: user.id ? user.id.toString() : "N/A", // Convert BigInt safely
+        wallet: user.account || "N/A",
+        sponsorId: user.referrer ? user.referrer.toString() : "N/A", // Convert BigInt safely
+        activationDate: user.start , // Convert BigInt safely
+        level: user.level ? user.level.toString() : "N/A", // Ensure level is a number
+        directTeam: user.directTeam ? user.directTeam.toString() : "0", // Convert BigInt safely
+      }));
+
+      console.log("Matrix Users:", formattedUsers);
+      setMatrixUsers(formattedUsers);
+    } catch (error) {
+      console.error("Error fetching matrix users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMatrixUsers(userId, 0); // Fetch Level 0 data on mount
+  }, [userId]); // Runs only when userId changes
+
   return (
     <>
   {/* saved from url=(0028)https://getrise.pro/downline */}
@@ -174,92 +240,93 @@ Learn how to configure a non-root public URL by running `npm run build`.
           </div>
         </div>
         <br></br><br></br>
+      
+      
         <div className="w-full flex justify-center p-4">
-          <div className="mt-4 md:w-3/4 w-full">
-            <div className="flex overflow-x-auto">
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-blue-500 ml-0">
-                1
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                2
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                3
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                4
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                5
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                6
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                7
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                8
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                9
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                10
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                11
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                12
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                13
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                14
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                15
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                16
-              </p>
-              <p className="cursor-pointer font-medium px-4 py-2 rounded-sm bg-gray-700 bg-opacity-45 ml-2">
-                17
-              </p>
-            </div>
-            <div className="overflow-x-scroll mt-4 w-full rounded-lg dark:text-white text-gray-800">
-              <table className="w-full whitespace-nowrap">
-                <thead className="bg-[#8080821a]">
-                  <tr>
-                    <th className="text-center font-bold py-3 px-2 border-2 border-[rgba(124,240,89,0.16)] bg-[rgba(124,240,89,0.14)]">
-                      SNo.
-                    </th>
-                    <th className="text-center font-bold py-3 px-2 border-2 border-[rgba(124,240,89,0.16)] bg-[rgba(124,240,89,0.14)]">
-                      ID
-                    </th>
-                    <th className="text-center font-bold py-3 px-2 border-2 border-[rgba(124,240,89,0.16)] bg-[rgba(124,240,89,0.14)]">
-                      Address
-                    </th>
-                    <th className="text-center font-bold py-3 px-2 border-2 border-[rgba(124,240,89,0.16)] bg-[rgba(124,240,89,0.14)]">
-                      Sponser ID
-                    </th>
-                    <th className="text-center font-bold py-3 px-2 border-2 border-[rgba(124,240,89,0.16)] bg-[rgba(124,240,89,0.14)]">
-                      Activation Date
-                    </th>
-                    <th className="text-center font-bold py-3 px-2 border-2 border-[rgba(124,240,89,0.16)] bg-[rgba(124,240,89,0.14)]">
-                      Level
-                    </th>
-                    <th className="text-center font-bold py-3 px-2 border-2 border-[rgba(124,240,89,0.16)] bg-[rgba(124,240,89,0.14)]">
-                      Direct Team
-                    </th>
-                  </tr>
-                </thead>
-              </table>
-            </div>
-          </div>
+      <div className="mt-4 md:w-3/4 w-full">
+        {/* Level Selection */}
+        <div className="flex overflow-x-auto pb-2 space-x-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+  {[...Array(17).keys()].map((level) => (
+    <p
+      key={level}
+      onClick={() => {
+        setSelectedLevel(level);
+        fetchMatrixUsers(userId, level);
+      }}
+      className={`cursor-pointer font-semibold px-4 py-2 rounded-md transition duration-200 
+        ${selectedLevel === level 
+          ? "bg-gradient-to-r from-yellow-500 to-yellow-500 text-black shadow-lg scale-105" 
+          : "bg-gray-800 text-gray-300 hover:bg-yellow-500 hover:text-black"
+        }`}
+    >
+      {level + 1}
+    </p>
+  ))}
+</div>
+
+        {/* Table for Matrix Users */}
+        <div className="overflow-x-auto">
+          <br></br>
+
+          <table className="min-w-max w-full border border-gray-300 shadow-lg rounded-lg overflow-hidden bg-black text-white">
+          <thead className="bg-gradient-to-r from-yellow-500 to-yellow-500 text-black">
+  <tr>
+    {[
+      "S.No",
+      "User ID",
+      "Address",
+      "Sponsor ID",
+      "Activation Date",
+      "Level",
+      "Direct Team",
+    ].map((heading, index) => (
+      <th key={index} className="border px-4 py-2 text-left">
+        {heading}
+      </th>
+    ))}
+  </tr>
+</thead>
+<tbody>
+  {loading ? (
+    <tr>
+      <td colSpan="7" className="text-center py-4 text-gray-400">Loading...</td>
+    </tr>
+  ) : matrixUsers.length > 0 ? (
+    matrixUsers.map((user, index) => (
+      <tr
+        key={index}
+        className={`${
+          index % 2 === 0 ? "bg-gray-900" : "bg-black"
+        } hover:bg-yellow-500 hover:text-black transition duration-200`}
+      >
+        <td className="border px-4 py-2 text-center">{index + 1}</td>
+        <td className="border px-4 py-2 text-center">{user.id.toString()}</td>
+        <td className="border px-4 py-2 text-center">
+          {user.wallet.slice(0, 6)}...{user.wallet.slice(-4)}
+        </td>
+        <td className="border px-4 py-2 text-center">{user.sponsorId.toString()}</td>
+        <td className="border px-4 py-2 text-center">
+          {new Date(Number(user.activationDate) * 1000).toLocaleDateString()}
+        </td>
+        <td className="border px-4 py-2 text-center">{LEVEL_NAMES1[user.level] || "UNKNOWN"}</td>
+        <td className="border px-4 py-2 text-center">{user.directTeam.toString()}</td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="7" className="text-center py-4 text-gray-400">
+        No users found at Level {selectedLevel + 1}.
+      </td>
+    </tr>
+  )}
+</tbody>
+          </table>
         </div>
+      </div>
+    </div>
+
+
+
       </div>
     </div>
   </div>

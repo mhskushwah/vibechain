@@ -1,43 +1,131 @@
 import React, { useEffect, useState } from "react";
-import { BrowserProvider, Contract } from "ethers";
+import { BrowserProvider, Contract, ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
 
+const LEVEL_NAMES1 = [
+  "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+];
+
 const RecentIncome = () => {
-  const [activities, setActivities] = useState([]);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [userId, setUserId] = useState(0);
+  const [incomeData, setIncomeData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // ✅ Load Wallet Address from Local Storage
   useEffect(() => {
-    const fetchRecentActivities = async () => {
-      try {
-        if (!window.ethereum) return alert("Please install MetaMask!");
-        
-        const provider = new BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        
-        // Get last 10 activities
-        const recentActivities = await contract.getRecentActivities(10);
-        
-        const formattedActivities = recentActivities.map((activity, index) => ({
-          id: activity.id.toString(),
-          level: activity.level.toString(),
-          from: activity.from || "Unknown",
-          amount: activity.amount ? `${activity.amount.toString()} ETH` : "N/A",
-          incomeType: activity.incomeType || "Unknown",
-          layer: activity.layer ? activity.layer.toString() : "N/A",
-          timestamp: new Date(activity.time * 1000).toLocaleString(),
-        }));
-
-        setActivities(formattedActivities);
-      } catch (error) {
-        console.error("Error fetching activities:", error);
-      }
-    };
-
-    fetchRecentActivities();
+    const wallet = localStorage.getItem("wallet");
+    if (wallet) {
+      setWalletAddress(wallet);
+    }
   }, []);
+
+  // ✅ Get User ID from Smart Contract
+  useEffect(() => {
+    if (walletAddress) {
+      getUserData(walletAddress);
+    }
+  }, [walletAddress]);
+
+  const getUserData = async (wallet) => {
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      const userId = await contract.id(wallet);
+      setUserId(userId.toString()); // ✅ Convert BigInt to string
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  // ✅ Fetch Income Data when userId is available
+  useEffect(() => {
+    if (userId) {
+      fetchIncomeData(userId);
+    }
+  }, [userId]);
+
+  const fetchIncomeData = async (userId) => {
+    try {
+      setLoading(true);
+      const provider = new BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+      console.log("Fetching income data for User ID:", userId);
+      const result = await contract.getIncome(userId);
+      console.log("Raw Data from Contract:", result);
+
+      const activityResult = await contract.getRecentActivities(200);  // Get last 50 activities
+      console.log("Raw Activity Data:", activityResult);
+
+
+
+      if (!result || !Array.isArray(result)) {
+        console.log("Invalid Data Format");
+        setIncomeData([]);
+        return;
+      }
+
+
+      if (!activityResult || !Array.isArray(activityResult)) {
+        console.log("Invalid Activity Data Format");
+        setIncomeData([]);
+        return;
+      }
+
+
+// ✅ Mapping Income with Level using Activity Data in Descending Order
+const formattedData = result.map((entry) => {
+  const activity = activityResult.find((act) => act.id.toString() === entry.id.toString());
+  return {
+    id: entry.id.toString(),
+    layer: entry.layer.toString(),
+    amount: ethers.formatUnits(entry.amount, "ether"),
+    time: Number(entry.time), // Unix timestamp (for sorting)
+    formattedTime: new Date(Number(entry.time) * 1000).toLocaleString(), // Human-readable time
+    level: activity ? activity.level.toString() : "UNKNOWN",
+    type: getIncomeType(activity.level),
+
+  };
+}).sort((a, b) => b.time - a.time);  // Sort in descending order (latest first)
+
+
+
+
+      console.log("Formatted Data for Table:", formattedData);
+      setIncomeData(formattedData);
+    } catch (error) {
+      console.error("Error fetching income data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserLevel = async (userId) => {
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      
+      // Fetch user info from smart contract
+      const user = await contract.userInfo(userId);
+  
+      // Extract the level
+      return Number(user.level);
+    } catch (error) {
+      console.error("Error fetching user level:", error);
+      return 0; // Default to UNKNOWN if error occurs
+    }
+  };
+
   
 
-
+  const getIncomeType = (level) => {
+    const activitylevel = Number(level); // ✅ Convert layer to number for strict comparison
+    if (activitylevel === 1) return "Direct Income";  // Agar layer 1 hai to Direct Income
+    if (activitylevel === 2 || activitylevel ===  3 || activitylevel === 4 || activitylevel === 5 || activitylevel === 6 || activitylevel === 7 || activitylevel === 8 || activitylevel === 9 || activitylevel === 10 || activitylevel === 11 || activitylevel === 12 ||activitylevel === 13 || activitylevel === 14 || activitylevel === 15 || activitylevel === 16 || activitylevel === 17   ) return "Upgrade Income";  // Agar layer 2 hai to Level Upgrade Income
+    return "Other Income"; // Default Case
+  };
   return (
 <>
   {/* saved from url=(0029)https://getrise.pro/dashboard */}
@@ -253,7 +341,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
         <table className="min-w-max w-full border border-gray-300 shadow-lg rounded-lg overflow-hidden bg-black text-white">
           <thead>
             <tr className="bg-gradient-to-r from-yellow-500 to-yellow-500 text-black">
-              <th className="border px-4 py-2 text-left">#</th>
+              <th className="border px-4 py-2 text-left">S.N.</th>
               <th className="border px-4 py-2 text-left">From</th>
               <th className="border px-4 py-2 text-left">Amount</th>
               <th className="border px-4 py-2 text-left">Income Type</th>
@@ -263,21 +351,22 @@ Learn how to configure a non-root public URL by running `npm run build`.
             </tr>
           </thead>
           <tbody>
-            {activities.length > 0 ? (
-              activities.map((activity, index) => (
+          {incomeData.length > 0 ? (
+            incomeData.map((row, index) => (
+
                 <tr
                   key={index}
                   className={`${
                     index % 2 === 0 ? "bg-gray-900" : "bg-black"
                   } hover:bg-yellow-500 hover:text-black transition duration-200`}
                 >
-                  <td className="border px-4 py-2">{index + 1}</td>
-                  <td className="border px-4 py-2">{activity.from}</td>
-                  <td className="border px-4 py-2">{activity.amount}</td>
-                  <td className="border px-4 py-2">{activity.incomeType}</td>
-                  <td className="border px-4 py-2">{activity.level}</td>
-                  <td className="border px-4 py-2">{activity.layer}</td>
-                  <td className="border px-4 py-2">{activity.timestamp}</td>
+                  <td className="border px-4 py-2">{index+1}</td>
+                  <td className="border px-4 py-2">{row.id}</td>
+                  <td className="border px-4 py-2">{row.amount}</td>
+                  <td className="border px-4 py-2">{row.type}</td>
+                  <td className="border px-4 py-2">{row.level || "UNKNOWN"}</td>
+                  <td className="border px-4 py-2">{row.layer}</td>
+                  <td className="border px-4 py-2">{row.formattedTime}</td>
                 </tr>
               ))
             ) : (
@@ -290,6 +379,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
           </tbody>
         </table>
       </div>
+     
     </div>
         
        

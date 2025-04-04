@@ -1,14 +1,130 @@
-import { useNavigate } from "react-router-dom";
-import React, { useState } from 'react';
-import MLMTree from './MLMTree';
+import React, { useState, useEffect, useCallback } from "react";
+import ReactFlow, { MiniMap, Controls, Background, Handle } from "reactflow";
+import "reactflow/dist/style.css";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
+import { BrowserProvider, ethers } from "ethers";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import Tree from "react-d3-tree";
 
-function CommunityTree() {
 
 
-  const navigate = useNavigate(); // 🔹 Navigation Hook
-  const [userId, setUserId] = useState(1);
 
- 
+
+
+
+const CommunityTree = () => {
+
+  const [treeData, setTreeData] = useState({});
+  const [selectedNode, setSelectedNode] = useState(null);
+   const [walletAddress, setWalletAddress] = useState("");
+    const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
+  const [wallet, setWallet] = useState("");
+  const [contract, setContract] = useState(null);
+
+  
+
+   
+  
+    useEffect(() => {
+      const wallet = localStorage.getItem("wallet");
+      if (wallet) {
+        setWalletAddress(wallet);
+      }
+    }, []);
+  
+    useEffect(() => {
+      if (walletAddress) {
+        fetchUserId(walletAddress);
+      }
+    }, [walletAddress]);
+  
+    const fetchUserId = async (wallet) => {
+      try {
+        const provider = new BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const userId = await contract.id(wallet);
+        setUserId(userId.toString()); // Convert BigInt to string
+      } catch (error) {
+        console.error("Error fetching user ID:", error);
+      }
+    };
+  
+
+    useEffect(() => {
+      loadBlockchainData();
+    }, []);
+  
+    const loadBlockchainData = async () => {
+      try {
+        if (!window.ethereum) {
+          alert("Please install MetaMask!");
+          return;
+        }
+  
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const signer = await provider.getSigner();
+        const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        setContract(contractInstance);
+  
+        const rootUser = 11318;
+        const tree = await buildTree(contractInstance, rootUser, 0, 3);
+        setTreeData(tree);
+      } catch (error) {
+        console.error("Error fetching blockchain data:", error);
+      }
+    };
+  
+    const buildTree = async (contract, userId, level, maxDepth) => {
+      if (!contract) {
+          console.error("Contract not initialized yet!");
+          return null;
+      }
+  
+      if (!userId) {
+          console.error("User ID is undefined!");
+          return null;
+      }
+      if (!contract) return null;
+      if (!userId || level >= maxDepth) return { name: `User ${userId}` }; 
+  
+      try {
+          if (!contract.getMatrixUsers) {
+              console.error("getMatrixUsers function not found in contract!");
+              return null;
+          }
+  
+          const matrixUsers = await contract.getMatrixUsers(userId, level);
+          console.log(`Fetched Users for ${userId}:`, matrixUsers);
+  
+          if (!matrixUsers || matrixUsers.length === 0) {
+              return { name: `User ${userId.toString()}`, children: [] };
+          }
+  
+          let children = [];
+  
+          for (let i = 0; i < matrixUsers.length; i++) {
+              if (!matrixUsers[i] || !matrixUsers[i].id) {
+                  console.warn(`Skipping undefined user at index ${i}`);
+                  continue;
+              }
+              let childNode = await buildTree(contract, matrixUsers[i].id, level + 1, maxDepth);
+              if (childNode) children.push(childNode);
+          }
+  
+          return { name: `User ${userId.toString()}`, children };
+      } catch (error) {
+          console.error(`Error fetching data for user ${userId}:`, error);
+          return null;
+      }
+  };
+
+
+  
   return (
 
     <>
@@ -138,7 +254,7 @@ Unlike "/favicon.ico" or "favicon.ico", "/favicon.ico" will
 work correctly both with client-side routing and a non-root public URL.
 Learn how to configure a non-root public URL by running `npm run build`.
     */}
-  <title>RainBNB</title>
+  <title>VIBECHAIN</title>
   <style
     dangerouslySetInnerHTML={{
       __html:
@@ -166,36 +282,34 @@ Learn how to configure a non-root public URL by running `npm run build`.
       />
       <div className="text-black dark:text-white transition-colors duration-1000 min-h-screen relative">
   
-        <div className="flex justify-center w-full px-4 mt-6">
-          <div className="w-full md:w-3/4">
-            <div className="flex items-center justify-between w-full overflow-x-auto">
-              <div className="flex items-center justify-between w-full overflow-x-auto">
-            </div>
-            </div>
-          </div>
-        </div>
+      
         <div className="flex flex-col items-center mt-2 w-full p-4 overflow-x-auto min-h-screen">
         
         <div style={{ textAlign: 'center', padding: '20px', background: 'transparent', minHeight: '100vh' }}>
         <h1 className="text-lime-500 font-bold text-2xl"><br></br>Community</h1>
 
-            <input
-                type="number"
-                placeholder="Enter User ID"
-                value={userId}
-                onChange={e => setUserId(e.target.value)}
-                style={{
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    border: '1px solid #ccc',
-                    fontSize: '16px',
-                    outline: 'none',
-                    marginBottom: '20px',
-                    color: 'red'
-                }}
-            />
 
-            <MLMTree userId={parseInt(userId)} />
+        <div style={{ width: "100vw", height: "90vh", backgroundColor: "#f0f2f5", padding: "20px" }}>
+      {treeData ? (
+        <Tree
+          data={treeData}
+          orientation="vertical"
+          translate={{ x: 500, y: 100 }}
+          pathFunc="step"
+          separation={{ siblings: 1.5, nonSiblings: 2 }}
+          nodeSize={{ x: 200, y: 100 }}
+          styles={{
+            links: { stroke: "#4A90E2", strokeWidth: 2 },
+            nodes: {
+              node: { circle: { fill: "#4A90E2", r: 10 } },
+              leafNode: { circle: { fill: "#50E3C2", r: 10 } },
+            },
+          }}
+        />
+      ) : (
+        <p style={{ textAlign: "center", color: "#888" }}>Loading tree data...</p>
+      )}
+    </div>
         </div>
 
 
@@ -210,4 +324,5 @@ Learn how to configure a non-root public URL by running `npm run build`.
   );
 }
 
-export default CommunityTree;
+
+export default CommunityTree; 

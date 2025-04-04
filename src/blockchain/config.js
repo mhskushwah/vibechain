@@ -2,7 +2,7 @@
 import { ethers } from 'ethers';
 
 export const RPC_URL = "https://opbnb-mainnet-rpc.bnbchain.org";  // ✅ Tumhara testnet RPC URL
-export const CONTRACT_ADDRESS = "0xe1035d5FD1394DA5644944d4236a790AE9D1234f";           // ✅ Tumhara Smart Contract Address
+export const CONTRACT_ADDRESS = "0xE78A32C62e07AF39aBD11d56E00FB2bd11B7Aa3F";           // ✅ Tumhara Smart Contract Address
 export const CONTRACT_ABI = [
   {
     "inputs": [

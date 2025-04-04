@@ -117,6 +117,11 @@ const Dashboard = () => {
     }
   }, [searchParams, walletAddress]);
 
+
+
+
+
+  
   // Auto connect wallet if already saved in localStorage
   useEffect(() => {
       const wallet = localStorage.getItem("wallet");
@@ -228,31 +233,34 @@ const Dashboard = () => {
   
           const provider = new ethers.BrowserProvider(window.ethereum);
           const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-          
-          // 🔹 Check if user has a valid ID in the contract
+  
+          // 🔹 Check user ID from contract
           const userId = await contract.id(wallet);
-          console.log("User ID:", userId);
+          console.log("User ID:", Number(userId));
   
-          if (userId > 0) {
+          if (Number(userId) > 0) {
               setIsRegistered(true);
-              setShowRegisterPopup(false); // 🛑 Already registered, popup close
+              setShowRegisterPopup(false); // 🛑 Already registered, no popup
               return true;
-          } else {
-              setIsRegistered(false);
-  
-              // ✅ Get stored referral ID from localStorage
-              let refId = localStorage.getItem("referrerId");
-              console.log("Referral ID:", refId);
-  
-              // ✅ Ensure referral ID is valid before showing the popup
-              if (!refId || isNaN(Number(refId)) || Number(refId) <= 0) {
-                  alert("❌ Not a valid referral link! Please use a valid referral.");
-                  return false; // ❌ STOP HERE! Do NOT show popup
-              }
-  
-              setShowRegisterPopup(true); // ✅ Show popup only if NOT registered
-              return false;
           }
+  
+          // 🟢 User is NOT registered, now check referral ID
+          setIsRegistered(false);
+  
+          // ✅ Get Referral ID from URL or localStorage
+          const urlParams = new URLSearchParams(window.location.search);
+          let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
+  
+          // ✅ Validate and store referral ID
+          if (!isNaN(refId) && Number(refId) > 0) {
+              localStorage.setItem("referrerId", refId);
+              console.log("Referral ID Set:", refId);
+              setShowRegisterPopup(true); // ✅ Show popup only if user is NEW
+          } else {
+              localStorage.removeItem("referrerId");
+          }
+  
+          return false;
       } catch (error) {
           console.error("⚠️ Error checking registration:", error);
           alert("❌ Error checking registration! Try again.");
@@ -260,73 +268,66 @@ const Dashboard = () => {
       }
   };
   
+  
   const handleRegister = async () => {
-      if (!window.ethereum) {
-          alert("🦊 Please install MetaMask!");
-          return;
-      }
-  
-      if (!walletAddress) {
-          alert("❌ Connect wallet first!");
-          return;
-      }
-  
-      setLoading(true);
-  
-      try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const signer = await provider.getSigner();
-          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-  
-          const userAddress = await signer.getAddress();
-          const balance = await provider.getBalance(userAddress);
-          const valueInWei = ethers.parseUnits("0.0044", "ether"); // Convert BNB to Wei
-  
-          // ✅ Get Referral ID from localStorage
-          let refId = localStorage.getItem("referrerId");
-  
-          if (!refId || isNaN(refId) || Number(refId) <= 0) {
-              alert("❌ Not a valid referral link! Please use a valid referral.");
-              setLoading(false);
-              return;
-          }
-  
-          console.log("User Balance:", ethers.formatEther(balance), "BNB");
-          console.log("Value in Wei Required:", valueInWei.toString());
-          console.log("Contract Address:", CONTRACT_ADDRESS);
-          console.log("Signer Address:", userAddress);
-          console.log("Referral ID:", refId);
-  
-          // 🔹 Check if the user already exists before registration
-          const isRegistered = await checkUserRegistration(userAddress);
-          if (isRegistered) {
-              alert("✅ You are already registered!");
-              setLoading(false);
-              return;
-          }
-  
-          // 🔹 Check for sufficient balance
-          if (balance < valueInWei) {
-              alert("❌ Insufficient BNB Balance! Please add funds.");
-              setLoading(false);
-              return;
-          }
-  
-          // ✅ Register user with contract
-          const tx = await contract.register(refId, userAddress, { value: valueInWei });
-  
-          await tx.wait();
-          alert("✅ Registration Successful!");
-          setIsRegistered(true);
-          setShowRegisterPopup(false);
-      } catch (err) {
-          console.error("❌ Registration failed:", err);
-          alert("❌ Registration Failed! Please try again.");
-      } finally {
-          setLoading(false);
-      }
-  };
-  
+    if (!window.ethereum) {
+        alert("🦊 Please install MetaMask!");
+        return;
+    }
+
+    if (!walletAddress) {
+        alert("❌ Connect wallet first!");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+        const userAddress = await signer.getAddress();
+        const balance = await provider.getBalance(userAddress);
+        const valueInWei = ethers.parseUnits("0.0044", "ether");
+
+        // ✅ Get Referral ID from localStorage
+        let refId = localStorage.getItem("referrerId") || "0";
+        refId = isNaN(refId) || Number(refId) <= 0 ? "0" : refId;
+
+        console.log("User Balance:", ethers.formatEther(balance), "BNB");
+        console.log("Referral ID Used:", refId);
+
+        // 🔹 Check if user is already registered
+        const isRegistered = await checkUserRegistration(userAddress);
+        if (isRegistered) {
+            alert("✅ You are already registered!");
+            setLoading(false);
+            return;
+        }
+
+        // 🔹 Check for sufficient balance
+        if (balance < valueInWei) {
+            alert("❌ Insufficient BNB Balance! Please add funds.");
+            setLoading(false);
+            return;
+        }
+
+        // ✅ Register user with contract
+        const tx = await contract.register(refId, userAddress, { value: valueInWei });
+
+        await tx.wait();
+        alert("✅ Registration Successful!");
+        setIsRegistered(true);
+        setShowRegisterPopup(false);
+    } catch (err) {
+        console.error("❌ Registration failed:", err);
+        alert("❌ Registration Failed! Please try again.");
+    } finally {
+        setLoading(false);
+    }
+};
+
 
   
   
@@ -1177,10 +1178,10 @@ Learn how to configure a non-root public URL by running `npm run build`.
               <h4 className="font-bold">VIBE CHAIN Contract opbnb.bscscan</h4>
               <a
                 className="text-yellow-400 underline"
-                href="https://opbnb.bscscan.com/address/0xe1035d5FD1394DA5644944d4236a790AE9D1234f"
+                href="https://opbnb.bscscan.com/address/0xE78A32C62e07AF39aBD11d56E00FB2bd11B7Aa3F"
                 target="_blank"
               >
-                (0xe103536a....9D1234f)
+                (0xE78A32C6..........bd11B7Aa3F)
               </a>
             </div>
 

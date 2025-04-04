@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaTachometerAlt, FaUsers, FaTree, FaInfoCircle, FaSignOutAlt, FaDollarSign } from 'react-icons/fa';
 import './Navbar.css';
@@ -9,6 +9,7 @@ const Navbar = () => {
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
+  const navRef = useRef(null); // Reference for the nav element
 
   // Logout function
   const handleLogout = () => {
@@ -52,11 +53,26 @@ const Navbar = () => {
     };
   }, []);
 
+  // Close the menu when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navRef.current && !navRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
   // Hide navbar on Home page
   if (location.pathname === '/') return null;
 
   return (
-    <nav className={`navbar ${scrollingDown ? 'hide' : ''}`}>
+    <nav ref={navRef} className={`navbar ${scrollingDown ? 'hide' : ''}`}>
       <div className="navbar-container">
         {/* Logo */}
         <div className="logo">
@@ -66,7 +82,13 @@ const Navbar = () => {
         </div>
 
         {/* Hamburger Menu Icon */}
-        <div className="menu-icon" onClick={() => setMenuOpen(!menuOpen)}>
+        <div
+          className="menu-icon"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent click outside from closing the menu
+            setMenuOpen(!menuOpen);
+          }}
+        >
           {menuOpen ? <FaTimes /> : <FaBars />}
         </div>
 
