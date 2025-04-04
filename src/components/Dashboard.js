@@ -5,6 +5,7 @@ import { CheckCircle, ArrowUpCircle, Lock} from "lucide-react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 
+const ANKR_RPC = "https://rpc.ankr.com/eth/602dad926997f28c503802b983998452f478df6a1d71d150ba35f06d1fe8dd66";
 
 /* global BigInt */
 
@@ -225,128 +226,121 @@ const Dashboard = () => {
         }
     };
 
-    const logoutUser = () => {
-      setWalletAddress("");
-      setIsRegistered(false);
-      setUserId(null);
-      setUserData(null);
-      localStorage.removeItem("referrerId");
-      console.log("👋 User logged out due to wallet change.");
+ // ⛔ For logout when wallet changes or disconnects
+const logoutUser = () => {
+  setWalletAddress("");
+  setIsRegistered(false);
+  setUserId(null);
+  setUserData(null);
+  localStorage.removeItem("referrerId");
+  console.log("👋 User logged out due to wallet change.");
+};
+
+// ✅ Listen for wallet change
+useEffect(() => {
+  const handleAccountsChanged = async (accounts) => {
+      if (accounts.length === 0) {
+          console.log("🛑 Wallet disconnected.");
+          logoutUser();
+          alert("Wallet disconnected! Please connect again.");
+      } else {
+          const newWallet = accounts[0];
+
+          if (walletAddress && walletAddress !== newWallet) {
+              console.log("🔄 Wallet switched from", walletAddress, "to", newWallet);
+              logoutUser();
+          }
+
+          setWalletAddress(newWallet);
+
+          const registered = await checkUserRegistration(newWallet);
+          if (registered) {
+              await fetchUserDetails(newWallet);
+          }
+      }
   };
 
-  // ✅ Listen for wallet change
-  useEffect(() => {
-    const handleAccountsChanged = async (accounts) => {
-        if (accounts.length === 0) {
-            // 🔴 Wallet disconnected
-            console.log("🛑 Wallet disconnected.");
-            logoutUser(); // Custom logout function
-            alert("Wallet disconnected! Please connect again.");
-        } else {
-            const newWallet = accounts[0];
+  if (window.ethereum) {
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+  }
 
-            // ⚠️ If new wallet is different from current one → logout previous user
-            if (walletAddress && walletAddress !== newWallet) {
-                console.log("🔄 Wallet switched from", walletAddress, "to", newWallet);
-                logoutUser(); // Clear previous data
-            }
+  return () => {
+      if (window.ethereum?.removeListener) {
+          window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      }
+  };
+}, [walletAddress]);
 
-            setWalletAddress(newWallet);
-
-            // ✅ Now check new wallet registration
-            const registered = await checkUserRegistration(newWallet);
-            if (registered) {
-                await fetchUserDetails(newWallet);
-            }
-        }
-    };
-
-    if (window.ethereum) {
-        window.ethereum.on("accountsChanged", handleAccountsChanged);
-    }
-
-    return () => {
-        if (window.ethereum?.removeListener) {
-            window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
-        }
-    };
-}, [walletAddress]);  // depend on walletAddress now
-  // ✅ Fetch user data from contract
-  const fetchUserDetails = async (wallet) => {
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+// ✅ Fetch user data using Ankr
+const fetchUserDetails = async (wallet) => {
+  try {
+      const provider = new ethers.JsonRpcProvider(ANKR_RPC);  // Using Ankr
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
       const userId = await contract.id(wallet);
-      const user = await contract.User(wallet); // Mapping: User[address] => struct
+      const user = await contract.User(wallet);
 
       console.log("👤 User Data:", user);
       setUserId(Number(userId));
       setUserData(user);
-    } catch (error) {
+  } catch (error) {
       console.error("❌ Error fetching user details:", error);
-    }
-  };
-
-  // ✅ On walletAddress change → check registration
-  useEffect(() => {
-    if (walletAddress) {
-      checkUserRegistration(walletAddress).then((registered) => {
-        if (registered) {
-          fetchUserDetails(walletAddress);
-        }
-      });
-    }
-  }, [walletAddress]);
-
-  // ✅ Check registration & handle referral
-  const checkUserRegistration = async (wallet) => {
-    try {
-        if (!window.ethereum) {
-            alert("🦊 Please install MetaMask!");
-            return false;
-        }
-
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-
-        let userId = 0;
-        try {
-            userId = await contract.id(wallet);
-        } catch (err) {
-            console.warn("⛔ Wallet not found in smart contract. Possibly new user.");
-            return false; // Return false if user not registered
-        }
-
-        console.log("User ID:", Number(userId));
-
-        if (Number(userId) > 0) {
-            setIsRegistered(true);
-            setShowRegisterPopup(false);
-            return true;
-        }
-
-        setIsRegistered(false);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
-
-        if (!isNaN(refId) && Number(refId) > 0) {
-            localStorage.setItem("referrerId", refId);
-            console.log("Referral ID Set:", refId);
-            setShowRegisterPopup(true);
-        } else {
-            localStorage.removeItem("referrerId");
-        }
-
-        return false;
-    } catch (error) {
-        console.error("⚠️ Error checking registration:", error);
-        alert("❌ Error checking registration! Try again.");
-        return false;
-    }
+  }
 };
 
+// ✅ On wallet change → check registration
+useEffect(() => {
+  if (walletAddress) {
+      checkUserRegistration(walletAddress).then((registered) => {
+          if (registered) {
+              fetchUserDetails(walletAddress);
+          }
+      });
+  }
+}, [walletAddress]);
+
+// ✅ Check user registration via Ankr
+const checkUserRegistration = async (wallet) => {
+  try {
+      const provider = new ethers.JsonRpcProvider(ANKR_RPC);  // Using Ankr
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+      let userId = 0;
+      try {
+          userId = await contract.id(wallet);
+      } catch (err) {
+          console.warn("⛔ Wallet not found in smart contract. Possibly new user.");
+          return false;
+      }
+
+      console.log("User ID:", Number(userId));
+
+      if (Number(userId) > 0) {
+          setIsRegistered(true);
+          setShowRegisterPopup(false);
+          return true;
+      }
+
+      setIsRegistered(false);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
+
+      if (!isNaN(refId) && Number(refId) > 0) {
+          localStorage.setItem("referrerId", refId);
+          console.log("Referral ID Set:", refId);
+          setShowRegisterPopup(true);
+      } else {
+          localStorage.removeItem("referrerId");
+      }
+
+      return false;
+  } catch (error) {
+      console.error("⚠️ Error checking registration:", error);
+      alert("❌ Error checking registration! Try again.");
+      return false;
+  }
+};
 
   const handleRegister = async () => {
       if (!window.ethereum) {
