@@ -224,42 +224,59 @@ const Dashboard = () => {
         }
     };
 
-    const checkUserRegistration = async (wallet) => {
+    useEffect(() => {
+      if (window.ethereum) {
+          window.ethereum.on("accountsChanged", (accounts) => {
+              if (accounts.length > 0) {
+                  setWalletAddress(accounts[0]);
+                  checkUserRegistration(accounts[0]);
+              } else {
+                  setWalletAddress("");
+                  setIsRegistered(false);
+              }
+          });
+      }
+  }, []);
+
+  useEffect(() => {
+      if (walletAddress) {
+          checkUserRegistration(walletAddress);
+      }
+  }, [walletAddress]);
+
+  const checkUserRegistration = async (wallet) => {
       try {
           if (!window.ethereum) {
               alert("🦊 Please install MetaMask!");
               return false;
           }
-  
+
           const provider = new ethers.BrowserProvider(window.ethereum);
           const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-  
-          // 🔹 Check user ID from contract
+
+          // 🔹 Fetch User ID
           const userId = await contract.id(wallet);
           console.log("User ID:", Number(userId));
-  
+
           if (Number(userId) > 0) {
               setIsRegistered(true);
-              setShowRegisterPopup(false); // 🛑 Already registered, no popup
+              setShowRegisterPopup(false);
               return true;
           }
-  
-          // 🟢 User is NOT registered, now check referral ID
+
           setIsRegistered(false);
-  
-          // ✅ Get Referral ID from URL or localStorage
+
+          // ✅ Get Referral ID
           const urlParams = new URLSearchParams(window.location.search);
           let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
-  
-          // ✅ Validate and store referral ID
+
           if (!isNaN(refId) && Number(refId) > 0) {
               localStorage.setItem("referrerId", refId);
               console.log("Referral ID Set:", refId);
-              setShowRegisterPopup(true); // ✅ Show popup only if user is NEW
+              setShowRegisterPopup(true);
           } else {
               localStorage.removeItem("referrerId");
           }
-  
           return false;
       } catch (error) {
           console.error("⚠️ Error checking registration:", error);
@@ -267,66 +284,63 @@ const Dashboard = () => {
           return false;
       }
   };
-  
-  
+
   const handleRegister = async () => {
-    if (!window.ethereum) {
-        alert("🦊 Please install MetaMask!");
-        return;
-    }
+      if (!window.ethereum) {
+          alert("🦊 Please install MetaMask!");
+          return;
+      }
 
-    if (!walletAddress) {
-        alert("❌ Connect wallet first!");
-        return;
-    }
+      if (!walletAddress) {
+          alert("❌ Connect wallet first!");
+          return;
+      }
 
-    setLoading(true);
+      setLoading(true);
 
-    try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-        const userAddress = await signer.getAddress();
-        const balance = await provider.getBalance(userAddress);
-        const valueInWei = ethers.parseUnits("0.0044", "ether");
+          const userAddress = await signer.getAddress();
+          const balance = await provider.getBalance(userAddress);
+          const valueInWei = ethers.parseUnits("0.0044", "ether");
 
-        // ✅ Get Referral ID from localStorage
-        let refId = localStorage.getItem("referrerId") || "0";
-        refId = isNaN(refId) || Number(refId) <= 0 ? "0" : refId;
+          let refId = localStorage.getItem("referrerId") || "0";
+          refId = isNaN(refId) || Number(refId) <= 0 ? "0" : refId;
 
-        console.log("User Balance:", ethers.formatEther(balance), "BNB");
-        console.log("Referral ID Used:", refId);
+          console.log("User Balance:", ethers.formatEther(balance), "BNB");
+          console.log("Referral ID Used:", refId);
 
-        // 🔹 Check if user is already registered
-        const isRegistered = await checkUserRegistration(userAddress);
-        if (isRegistered) {
-            alert("✅ You are already registered!");
-            setLoading(false);
-            return;
-        }
+          // 🔹 Check if already registered
+          const isRegistered = await checkUserRegistration(userAddress);
+          if (isRegistered) {
+              alert("✅ You are already registered!");
+              setLoading(false);
+              return;
+          }
 
-        // 🔹 Check for sufficient balance
-        if (balance < valueInWei) {
-            alert("❌ Insufficient BNB Balance! Please add funds.");
-            setLoading(false);
-            return;
-        }
+          // 🔹 Check Balance
+          if (balance < valueInWei) {
+              alert("❌ Insufficient BNB Balance! Please add funds.");
+              setLoading(false);
+              return;
+          }
 
-        // ✅ Register user with contract
-        const tx = await contract.register(refId, userAddress, { value: valueInWei });
-
-        await tx.wait();
-        alert("✅ Registration Successful!");
-        setIsRegistered(true);
-        setShowRegisterPopup(false);
-    } catch (err) {
-        console.error("❌ Registration failed:", err);
-        alert("❌ Registration Failed! Please try again.");
-    } finally {
-        setLoading(false);
-    }
-};
+          // ✅ Register User
+          const tx = await contract.register(refId, userAddress, { value: valueInWei });
+          await tx.wait();
+          alert("✅ Registration Successful!");
+          setIsRegistered(true);
+          setShowRegisterPopup(false);
+      } catch (err) {
+          console.error("❌ Registration failed:", err);
+          alert("❌ Registration Failed! Please try again.");
+      } finally {
+          setLoading(false);
+      }
+  };
 
 
   
