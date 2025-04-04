@@ -45,6 +45,7 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(false);
     const [selectedLevels, setSelectedLevels] = useState([]);
     const [searchParams] = useSearchParams(); // URL से referral ID निकालने के लिए
+    const [userData, setUserData] = useState(null);
 
 
 
@@ -224,65 +225,119 @@ const Dashboard = () => {
         }
     };
 
-    useEffect(() => {
-      if (window.ethereum) {
-          window.ethereum.on("accountsChanged", (accounts) => {
-              if (accounts.length > 0) {
-                  setWalletAddress(accounts[0]);
-                  checkUserRegistration(accounts[0]);
-              } else {
-                  setWalletAddress("");
-                  setIsRegistered(false);
-              }
-          });
-      }
-  }, []);
+    const logoutUser = () => {
+      setWalletAddress("");
+      setIsRegistered(false);
+      setUserId(null);
+      setUserData(null);
+      localStorage.removeItem("referrerId");
+      console.log("👋 User logged out due to wallet change.");
+  };
 
+  // ✅ Listen for wallet change
   useEffect(() => {
-      if (walletAddress) {
-          checkUserRegistration(walletAddress);
-      }
+    const handleAccountsChanged = async (accounts) => {
+        if (accounts.length === 0) {
+            // 🔴 Wallet disconnected
+            console.log("🛑 Wallet disconnected.");
+            logoutUser(); // Custom logout function
+            alert("Wallet disconnected! Please connect again.");
+        } else {
+            const newWallet = accounts[0];
+
+            // ⚠️ If new wallet is different from current one → logout previous user
+            if (walletAddress && walletAddress !== newWallet) {
+                console.log("🔄 Wallet switched from", walletAddress, "to", newWallet);
+                logoutUser(); // Clear previous data
+            }
+
+            setWalletAddress(newWallet);
+
+            // ✅ Now check new wallet registration
+            const registered = await checkUserRegistration(newWallet);
+            if (registered) {
+                await fetchUserDetails(newWallet);
+            }
+        }
+    };
+
+    if (window.ethereum) {
+        window.ethereum.on("accountsChanged", handleAccountsChanged);
+    }
+
+    return () => {
+        if (window.ethereum?.removeListener) {
+            window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        }
+    };
+}, [walletAddress]);  // depend on walletAddress now
+  // ✅ Fetch user data from contract
+  const fetchUserDetails = async (wallet) => {
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+      const userId = await contract.id(wallet);
+      const user = await contract.User(wallet); // Mapping: User[address] => struct
+
+      console.log("👤 User Data:", user);
+      setUserId(Number(userId));
+      setUserData(user);
+    } catch (error) {
+      console.error("❌ Error fetching user details:", error);
+    }
+  };
+
+  // ✅ On walletAddress change → check registration
+  useEffect(() => {
+    if (walletAddress) {
+      checkUserRegistration(walletAddress).then((registered) => {
+        if (registered) {
+          fetchUserDetails(walletAddress);
+        }
+      });
+    }
   }, [walletAddress]);
 
+  // ✅ Check registration & handle referral
   const checkUserRegistration = async (wallet) => {
-      try {
-          if (!window.ethereum) {
-              alert("🦊 Please install MetaMask!");
-              return false;
-          }
-
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-
-          // 🔹 Fetch User ID
-          const userId = await contract.id(wallet);
-          console.log("User ID:", Number(userId));
-
-          if (Number(userId) > 0) {
-              setIsRegistered(true);
-              setShowRegisterPopup(false);
-              return true;
-          }
-
-          setIsRegistered(false);
-
-          // ✅ Get Referral ID
-          const urlParams = new URLSearchParams(window.location.search);
-          let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
-
-          if (!isNaN(refId) && Number(refId) > 0) {
-              localStorage.setItem("referrerId", refId);
-              console.log("Referral ID Set:", refId);
-              setShowRegisterPopup(true);
-          } else {
-              localStorage.removeItem("referrerId");
-          }
-          return false;
-      } catch (error) {
-          console.error("⚠️ Error checking registration:", error);
-          alert("❌ Error checking registration! Try again.");
-          return false;
+    try {
+      if (!window.ethereum) {
+        alert("🦊 Please install MetaMask!");
+        return false;
       }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+      const userId = await contract.id(wallet);
+      console.log("User ID:", Number(userId));
+
+      if (Number(userId) > 0) {
+        setIsRegistered(true);
+        setShowRegisterPopup(false);
+        return true;
+      }
+
+      // 🔁 Not registered → check referral
+      setIsRegistered(false);
+      const urlParams = new URLSearchParams(window.location.search);
+      let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
+
+      if (!isNaN(refId) && Number(refId) > 0) {
+        localStorage.setItem("referrerId", refId);
+        console.log("Referral ID Set:", refId);
+        setShowRegisterPopup(true);
+      } else {
+        localStorage.removeItem("referrerId");
+      }
+
+      return false;
+    } catch (error) {
+      console.error("⚠️ Error checking registration:", error);
+      alert("❌ Error checking registration! Try again.");
+      return false;
+    }
   };
 
   const handleRegister = async () => {
