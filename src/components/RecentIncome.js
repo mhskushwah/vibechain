@@ -56,7 +56,7 @@ const RecentIncome = () => {
       const result = await contract.getIncome(userId);
       console.log("Raw Data from Contract:", result);
 
-      const activityResult = await contract.getRecentActivities(200);  // Get last 50 activities
+      const activityResult = await contract.getRecentActivities(150);  // Get last 50 activities
       console.log("Raw Activity Data:", activityResult);
 
 
@@ -75,22 +75,25 @@ const RecentIncome = () => {
       }
 
 
-// ✅ Mapping Income with Level using Activity Data in Descending Order
-const formattedData = result.map((entry) => {
-  const activity = activityResult.find((act) => act.id.toString() === entry.id.toString());
-  return {
-    id: entry.id.toString(),
-    layer: entry.layer.toString(),
-    amount: ethers.formatUnits(entry.amount, "ether"),
-    time: Number(entry.time), // Unix timestamp (for sorting)
-    formattedTime: new Date(Number(entry.time) * 1000).toLocaleString(), // Human-readable time
-    level: activity ? activity.level.toString() : "UNKNOWN",
-    type: getIncomeType(activity.level),
-
-  };
-}).sort((a, b) => b.time - a.time);  // Sort in descending order (latest first)
-
-
+      const formattedData = result.map((entry) => {
+        // Find corresponding activity using ID
+        const activity = activityResult.find((act) => {
+          const activityId = act[0]?.toString(); // act[0] = id
+          return activityId === entry.id.toString();
+        });
+      
+        const level = activity ? activity[2]?.toString() : "0"; // act[2] = level
+      
+        return {
+          id: entry.id.toString(),
+          layer: entry.layer.toString(),
+          amount: ethers.formatUnits(entry.amount, "ether"),
+          time: Number(entry.time), // Unix timestamp (for sorting)
+          formattedTime: new Date(Number(entry.time) * 1000).toLocaleString(), // Human-readable time
+          level: level,
+          type: getIncomeType(level),
+        };
+      }).sort((a, b) => b.time - a.time);
 
 
       console.log("Formatted Data for Table:", formattedData);
