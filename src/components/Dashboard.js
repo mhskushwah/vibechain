@@ -48,9 +48,6 @@ const Dashboard = () => {
     const [userData, setUserData] = useState(null);
 
 
-
-
-
     useEffect(() => {
       async function connectWallet() {
           if (window.ethereum) {
@@ -120,17 +117,6 @@ const Dashboard = () => {
 
 
 
-
-
-  
-  // Auto connect wallet if already saved in localStorage
-  useEffect(() => {
-      const wallet = localStorage.getItem("wallet");
-      if (wallet) {
-          setWalletAddress(wallet);
-          getWalletDetails(wallet);  // Fetch details for saved wallet
-      }
-  }, []);
 
   // Fetch wallet details including balance
   const getWalletDetails = async (wallet) => {
