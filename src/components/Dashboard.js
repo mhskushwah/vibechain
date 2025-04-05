@@ -137,31 +137,6 @@ const Dashboard = () => {
 
 
 
-
-
-
-
-
-
-
-    // ✅ Auto connect if wallet already saved
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (window.ethereum) {
-                clearInterval(interval);
-                const wallet = localStorage.getItem("wallet");
-                if (wallet) {
-                    setWalletAddress(wallet);
-                    getWalletBalance(wallet);
-                    getUserData(wallet);
-                    checkUserRegistration(wallet);
-
-                }
-            }
-        }, 500);
-        return () => clearInterval(interval);
-    }, []);
-
    
    
     // ✅ Get Wallet Balance
