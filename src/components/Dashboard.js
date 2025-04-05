@@ -819,7 +819,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
         { title: "My Community Size", value: totalMatrixTeam, icon: "matrix.png", showBNB: false, isBNB: false },
         { title: "Direct Income", value: directReferralIncome, icon: "bnb.png", showBNB: true, isBNB: true },
         { title: "Referral Income", value: referralIncome, icon: "bnb.png", showBNB: true, isBNB: true },
-        { title: "Upgrade Income", value: levelIncome, icon: "bnb.png", showBNB: true, isBNB: true },
+        { title: "Level Upgrade Income", value: levelIncome, icon: "bnb.png", showBNB: true, isBNB: true },
     ].map((item, index) => (
         <div key={index} className="bg-gray-900 bg-opacity-50 p-6 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 rounded-xl shadow-lg border border-gray-800 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center justify-between">
