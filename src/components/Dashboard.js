@@ -136,20 +136,6 @@ const Dashboard = () => {
   };
 
 
-
-   
-   
-    // ✅ Get Wallet Balance
-    const getWalletBalance = async (wallet) => {
-        try {
-            const provider = new BrowserProvider(window.ethereum);
-            const balance = await provider.getBalance(wallet);
-            setWalletBalance(ethers.formatEther(balance)); 
-        } catch (error) {
-            console.error("Error fetching balance", error);
-        }
-    };
-
     // ✅ Get User Data & Income Array
     const getUserData = async (wallet) => {
         try {
@@ -444,10 +430,13 @@ const Dashboard = () => {
 
         console.log(`Upgrading ${selectedLevels.length} levels for User ID: ${userId}`);
         console.log(`Total Cost: ${ethers.formatEther(totalBNB)} BNB`);
+        console.log("🟢 Upgrading levels:", selectedLevels);
 
         // ✅ Upgrade Levels
-        const tx = await contract.upgrade(userId, selectedLevels.length, { value: totalBNB });
-
+        const tx = await contract["upgrade(uint256,uint256)"](userId, selectedLevels.length, {
+          value: totalBNB,
+          gasLimit: ethers.parseUnits("3000000", "wei"), // Optional, adjust if needed
+        });
         await tx.wait();
         alert("✅ Upgrade Successful!");
         setSelectedLevels([]);
