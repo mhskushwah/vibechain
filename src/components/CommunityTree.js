@@ -1,46 +1,86 @@
-import { useEffect, useState } from "react";
-import { fetchUserTree } from "./getTreeData";
-import Tree from "react-d3-tree";
+import React, { useEffect, useState } from "react";
+import { fetchUserTree } from "./getTreeData"; // Make sure this returns the proper nested data
 
-const levelColors = ["#4ade80", "#60a5fa", "#facc15", "#f87171", "#c084fc"];
+const TreeNode = ({ node }) => {
+  const [showInfo, setShowInfo] = useState(false);
+
+  if (!node) return null;
+
+  return (
+    <div className="flex flex-col items-center relative m-2">
+      {/* Tooltip with transition */}
+      {showInfo && (
+        <div className="absolute bottom-16 z-10 w-64 bg-white text-gray-900 dark:bg-gray-800 dark:text-white shadow-lg rounded-xl p-4 text-sm transition-all duration-200">
+          <div className="space-y-1">
+            <p><strong>ID:</strong> {node.name}</p>
+            <p><strong>Address:</strong> {node.attributes?.Address}</p>
+            <p><strong>Referrer:</strong> {node.attributes?.Referrer}</p>
+            <p><strong>Direct Team:</strong> {node.attributes?.Team}</p>
+            <p><strong>Activation Date:</strong> {node.attributes?.Start}</p>
+            <p><strong>Community size:</strong> {node.attributes?.TotalTeam}</p>
+          </div>
+        </div>
+      )}
+
+      {/* User avatar */}
+      <div
+        onMouseEnter={() => setShowInfo(true)}
+        onMouseLeave={() => setShowInfo(false)}
+        className="cursor-pointer flex flex-col items-center transition-transform hover:scale-105"
+      >
+        <div className="relative">
+          <img
+            src="/assets/communitytree_files/bnb.png"
+            className="h-14 w-14 rounded-full border-4 border-teal-500"
+            alt="User"
+          />
+          <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></span>
+        </div>
+        <p className="text-teal-600 font-semibold mt-2 text-sm">{node.name}</p>
+      </div>
+
+      {/* Children with lines */}
+      {node.children && node.children.length > 0 && (
+        <div className="flex flex-wrap justify-center items-start mt-4 relative w-full">
+          {/* Horizontal connector */}
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 h-4 border-l-2 border-gray-400"></div>
+          <div className="flex flex-wrap justify-center gap-4 w-full">
+            {node.children.map((child, index) => (
+              <div className="relative">
+                {/* Vertical connector line */}
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 h-4 border-l-2 border-gray-400"></div>
+                <TreeNode key={`${node.name}-${index}`} node={child} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 
 const CommunityTree = () => {
-  const [userId, setUserId] = useState(1);
   const [treeData, setTreeData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState("11318");
+  const [inputId, setInputId] = useState("11318");
 
   const handleSearch = async () => {
-    setLoading(true);
     try {
-      const data = await fetchUserTree(Number(userId));
+      const data = await fetchUserTree(inputId);
+      setUserId(inputId);
       setTreeData(data);
-    } catch (err) {
-      console.error("Error fetching tree:", err);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching tree:", error);
     }
   };
 
-  const renderNode = ({ nodeDatum }) => {
-    const color = levelColors[nodeDatum.level % levelColors.length] || "#ddd";
-    return (
-      <g>
-        <circle r={20} fill={color} stroke="#333" strokeWidth={2} />
-        <text fill="black" x={25} dy="5" fontWeight="bold">
-          {nodeDatum.name}
-        </text>
-        {nodeDatum.attributes &&
-          Object.entries(nodeDatum.attributes).map(([key, val], i) => (
-            <text key={i} x={25} dy={25 + i * 15} fontSize={12} fill="#555">
-              {key}: {val}
-            </text>
-          ))}
-      </g>
-    );
-  };
+  useEffect(() => {
+    handleSearch(); // load default tree on mount
+  }, []);
 
 
-  
   return (
 
     <>
@@ -196,47 +236,38 @@ Learn how to configure a non-root public URL by running `npm run build`.
         src="assets/communitytree_files/bgmobimg.png"
         className="fixed h-full w-full left-0 md:top-0 block md:hidden top-0 z-0"
       />
-         <div className="p-4 bg-gray-100 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">🌳 User Matrix Tree</h2>
 
-      <div className="flex mb-4">
-        <input
-          type="number"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="Enter User ID"
-          className="p-2 bg-white border rounded w-64"
-        />
-        <button
-          onClick={handleSearch}
-          className="bg-green-500 text-white px-4 py-2 ml-2 rounded"
-        >
-          Search
-        </button>
+      <br></br>
+      <br></br>
+      <div className="text-black dark:text-white transition-colors duration-1000 min-h-screen relative">
+      <div className="flex justify-center w-full px-4 mt-6">
+        <div className="w-full md:w-3/4">
+          <div className="flex items-center justify-between w-full overflow-x-auto">
+            <div className="text-teal-500 font-bold flex justify-center items-center gap-2">
+              <input
+                maxLength={7}
+                className="p-2 px-4 bg-gray-700 bg-opacity-45 w-[100px] rounded"
+                placeholder="ID"
+                value={inputId}
+                onChange={(e) => setInputId(e.target.value)}
+              />
+              <button
+                onClick={handleSearch}
+                className="py-2 px-4 bg-green-500 h-full text-white cursor-pointer rounded-sm text-sm font-medium"
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {loading && <p className="text-yellow-500">Loading...</p>}
-
-      <div
-        id="treeWrapper"
-        style={{
-          width: "100%",
-          height: "600px",
-          background: "white",
-          borderRadius: "10px",
-          padding: "1rem",
-          position: "relative",
-        }}
-      >
-        {treeData && (
-          <Tree
-            data={treeData}
-            renderCustomNodeElement={renderNode}
-            orientation="vertical"
-            pathFunc="step"
-            translate={{ x: 400, y: 50 }}
-            collapsible
-          />
+      <div className="flex flex-col items-center mt-4 w-full p-4 overflow-x-auto min-h-screen">
+        <h1 className="text-lime-500 font-bold text-2xl mb-4">Community Tree</h1>
+        {treeData ? (
+          <TreeNode node={treeData} />
+        ) : (
+          <p className="text-gray-400">Loading tree...</p>
         )}
       </div>
     </div>

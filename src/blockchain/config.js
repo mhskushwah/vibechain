@@ -892,14 +892,13 @@ export const CONTRACT_ABI = [
   }
 ];      // ✅ Tumhara Contract ABI
 
-export const getContract = async () => {
-  if (typeof window.ethereum === "undefined") {
-    alert("Please install MetaMask!");
-    return null;
-  }
+export const getProvider = () => {
+  if (!window.ethereum) throw new Error("Wallet not found");
+  return new ethers.BrowserProvider(window.ethereum); // For ethers v6+
+};
 
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-  return contract;
+export const getContract = async () => {
+  const provider = getProvider();
+  const signer = await provider.getSigner(); // 👈 await is MUST for ethers v6+
+  return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 };
