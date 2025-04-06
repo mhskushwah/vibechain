@@ -180,11 +180,11 @@ function CommunityInfo() {
         ".anticon{display:inline-flex;align-items:center;color:inherit;font-style:normal;line-height:0;text-align:center;text-transform:none;vertical-align:-0.125em;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}.anticon >*{line-height:1;}.anticon svg{display:inline-block;}.anticon .anticon .anticon-icon{display:block;}"
     }}
   />
-  <link rel="icon" href="https://getrise.pro/favicon.ico" />
+  <link rel="icon" href="https://getrise1.pro/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#000000" />
-  <meta name="description" content="RainBNB, the next generation of RideBNB." />
-  <link rel="apple-touch-icon" href="https://getrise.pro/logo192.png" />
+  <meta name="description" content="Vibe Chain the future of family " />
+  <link rel="apple-touch-icon" href="https://getrise1.pro/logo192.png" />
   {/*
 manifest.json provides metadata used when your web app is installed on a
 user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -199,7 +199,7 @@ Unlike "/favicon.ico" or "favicon.ico", "/favicon.ico" will
 work correctly both with client-side routing and a non-root public URL.
 Learn how to configure a non-root public URL by running `npm run build`.
     */}
-  <title>RainBNB</title>
+  <title>VIBE CHAIN</title>
   <style
     dangerouslySetInnerHTML={{
       __html:

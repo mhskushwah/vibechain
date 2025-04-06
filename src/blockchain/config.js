@@ -892,7 +892,14 @@ export const CONTRACT_ABI = [
   }
 ];      // ✅ Tumhara Contract ABI
 
-export const getContract = () => {
-  const provider = new ethers.JsonRpcProvider("https://opbnb-mainnet-rpc.bnbchain.org");
-  return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+export const getContract = async () => {
+  if (typeof window.ethereum === "undefined") {
+    alert("Please install MetaMask!");
+    return null;
+  }
+
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+  return contract;
 };

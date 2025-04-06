@@ -1,126 +1,42 @@
-import React, { useState, useEffect, useCallback } from "react";
-import ReactFlow, { MiniMap, Controls, Background, Handle } from "reactflow";
-import "reactflow/dist/style.css";
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
-import { BrowserProvider, ethers } from "ethers";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { useEffect, useState } from "react";
+import { fetchUserTree } from "./getTreeData";
 import Tree from "react-d3-tree";
 
-
-
-
-
-
+const levelColors = ["#4ade80", "#60a5fa", "#facc15", "#f87171", "#c084fc"];
 
 const CommunityTree = () => {
+  const [userId, setUserId] = useState(1);
+  const [treeData, setTreeData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const [treeData, setTreeData] = useState({});
-  const [selectedNode, setSelectedNode] = useState(null);
-   const [walletAddress, setWalletAddress] = useState("");
-    const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [wallet, setWallet] = useState("");
-  const [contract, setContract] = useState(null);
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchUserTree(Number(userId));
+      setTreeData(data);
+    } catch (err) {
+      console.error("Error fetching tree:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  
-
-   
-  
-    useEffect(() => {
-      const wallet = localStorage.getItem("wallet");
-      if (wallet) {
-        setWalletAddress(wallet);
-      }
-    }, []);
-  
-    useEffect(() => {
-      if (walletAddress) {
-        fetchUserId(walletAddress);
-      }
-    }, [walletAddress]);
-  
-    const fetchUserId = async (wallet) => {
-      try {
-        const provider = new BrowserProvider(window.ethereum);
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-        const userId = await contract.id(wallet);
-        setUserId(userId.toString()); // Convert BigInt to string
-      } catch (error) {
-        console.error("Error fetching user ID:", error);
-      }
-    };
-  
-
-    useEffect(() => {
-      loadBlockchainData();
-    }, []);
-  
-    const loadBlockchainData = async () => {
-      try {
-        if (!window.ethereum) {
-          alert("Please install MetaMask!");
-          return;
-        }
-  
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const signer = await provider.getSigner();
-        const contractInstance = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        setContract(contractInstance);
-  
-        const rootUser = 11318;
-        const tree = await buildTree(contractInstance, rootUser, 0, 3);
-        setTreeData(tree);
-      } catch (error) {
-        console.error("Error fetching blockchain data:", error);
-      }
-    };
-  
-    const buildTree = async (contract, userId, level, maxDepth) => {
-      if (!contract) {
-          console.error("Contract not initialized yet!");
-          return null;
-      }
-  
-      if (!userId) {
-          console.error("User ID is undefined!");
-          return null;
-      }
-      if (!contract) return null;
-      if (!userId || level >= maxDepth) return { name: `User ${userId}` }; 
-  
-      try {
-          if (!contract.getMatrixUsers) {
-              console.error("getMatrixUsers function not found in contract!");
-              return null;
-          }
-  
-          const matrixUsers = await contract.getMatrixUsers(userId, level);
-          console.log(`Fetched Users for ${userId}:`, matrixUsers);
-  
-          if (!matrixUsers || matrixUsers.length === 0) {
-              return { name: `User ${userId.toString()}`, children: [] };
-          }
-  
-          let children = [];
-  
-          for (let i = 0; i < matrixUsers.length; i++) {
-              if (!matrixUsers[i] || !matrixUsers[i].id) {
-                  console.warn(`Skipping undefined user at index ${i}`);
-                  continue;
-              }
-              let childNode = await buildTree(contract, matrixUsers[i].id, level + 1, maxDepth);
-              if (childNode) children.push(childNode);
-          }
-  
-          return { name: `User ${userId.toString()}`, children };
-      } catch (error) {
-          console.error(`Error fetching data for user ${userId}:`, error);
-          return null;
-      }
+  const renderNode = ({ nodeDatum }) => {
+    const color = levelColors[nodeDatum.level % levelColors.length] || "#ddd";
+    return (
+      <g>
+        <circle r={20} fill={color} stroke="#333" strokeWidth={2} />
+        <text fill="black" x={25} dy="5" fontWeight="bold">
+          {nodeDatum.name}
+        </text>
+        {nodeDatum.attributes &&
+          Object.entries(nodeDatum.attributes).map(([key, val], i) => (
+            <text key={i} x={25} dy={25 + i * 15} fontSize={12} fill="#555">
+              {key}: {val}
+            </text>
+          ))}
+      </g>
+    );
   };
 
 
@@ -280,42 +196,50 @@ Learn how to configure a non-root public URL by running `npm run build`.
         src="assets/communitytree_files/bgmobimg.png"
         className="fixed h-full w-full left-0 md:top-0 block md:hidden top-0 z-0"
       />
-      <div className="text-black dark:text-white transition-colors duration-1000 min-h-screen relative">
-  
-      
-        <div className="flex flex-col items-center mt-2 w-full p-4 overflow-x-auto min-h-screen">
-        
-        <div style={{ textAlign: 'center', padding: '20px', background: 'transparent', minHeight: '100vh' }}>
-        <h1 className="text-lime-500 font-bold text-2xl"><br></br>Community</h1>
+         <div className="p-4 bg-gray-100 min-h-screen">
+      <h2 className="text-2xl font-bold mb-4">🌳 User Matrix Tree</h2>
 
-
-        <div style={{ width: "100vw", height: "90vh", backgroundColor: "#f0f2f5", padding: "20px" }}>
-      {treeData ? (
-        <Tree
-          data={treeData}
-          orientation="vertical"
-          translate={{ x: 500, y: 100 }}
-          pathFunc="step"
-          separation={{ siblings: 1.5, nonSiblings: 2 }}
-          nodeSize={{ x: 200, y: 100 }}
-          styles={{
-            links: { stroke: "#4A90E2", strokeWidth: 2 },
-            nodes: {
-              node: { circle: { fill: "#4A90E2", r: 10 } },
-              leafNode: { circle: { fill: "#50E3C2", r: 10 } },
-            },
-          }}
+      <div className="flex mb-4">
+        <input
+          type="number"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          placeholder="Enter User ID"
+          className="p-2 bg-white border rounded w-64"
         />
-      ) : (
-        <p style={{ textAlign: "center", color: "#888" }}>Loading tree data...</p>
-      )}
-    </div>
-        </div>
-
-
-
-        </div>
+        <button
+          onClick={handleSearch}
+          className="bg-green-500 text-white px-4 py-2 ml-2 rounded"
+        >
+          Search
+        </button>
       </div>
+
+      {loading && <p className="text-yellow-500">Loading...</p>}
+
+      <div
+        id="treeWrapper"
+        style={{
+          width: "100%",
+          height: "600px",
+          background: "white",
+          borderRadius: "10px",
+          padding: "1rem",
+          position: "relative",
+        }}
+      >
+        {treeData && (
+          <Tree
+            data={treeData}
+            renderCustomNodeElement={renderNode}
+            orientation="vertical"
+            pathFunc="step"
+            translate={{ x: 400, y: 50 }}
+            collapsible
+          />
+        )}
+      </div>
+    </div>
     </div>
   </div>
   
