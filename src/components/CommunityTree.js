@@ -1,19 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { fetchUserTree } from "./getTreeData"; // Make sure this returns the proper nested data
-import { motion, AnimatePresence } from "framer-motion"; // Install this
+import { fetchUserTree } from "./getTreeData";
+import { motion } from "framer-motion";
 import { BrowserProvider, ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
+
 const LEVEL_NAMES1 = [
-  "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", 
-  "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+  "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON",
+  "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND",
+  "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
+
 const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
   const [expanded, setExpanded] = useState(true);
   const modalRef = useRef();
 
   const isSelected = selectedNode?.name === node?.name;
   const hasChildren = node?.children?.length > 0;
-
   const leftChild = node?.children?.[0] || null;
   const rightChild = node?.children?.[1] || null;
 
@@ -24,27 +26,13 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [setSelectedNode]);
 
   if (!node) return null;
 
-  const LEVEL_NAMES1 = [
-    "Newbie",
-    "Associate",
-    "Executive",
-    "Manager",
-    "Director",
-    "VP",
-    "President",
-    "CEO",
-  ]; // replace with actual data if dynamic
-
   return (
     <div className="flex flex-col items-center relative text-white p-2 min-w-[80px]">
-      {/* --- User Details Modal --- */}
       {isSelected && (
         <div
           ref={modalRef}
@@ -55,32 +43,22 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
           </h3>
           <table className="w-full border border-black rounded-md text-sm font-semibold">
             <tbody>
-              {[
-                { label: "ID", value: node.name },
-                {
-                  label: "Address",
-                  value:
-                    node.attributes?.Address?.length > 15
-                      ? `${node.attributes.Address.slice(0, 6)}...${node.attributes.Address.slice(-6)}`
-                      : node.attributes?.Address || "N/A",
-                },
-                { label: "Referrer", value: node.attributes?.Referrer || "N/A" },
-                { label: "Community", value: node.attributes?.TotalTeam || 0 },
-                { label: "Direct Team", value: node.attributes?.Team || 0 },
-                { label: "Activation Date", value: node.attributes?.Start || "N/A" },
-                {
-                  label: "Rank",
-                  value: LEVEL_NAMES1[node.attributes?.Rank] || "N/A",
-                },
-              ].map((item, index) => (
+              {["ID", "Address", "Referrer", "Community", "Direct Team", "Activation Date", "Rank"].map((label, index) => (
                 <tr
-                  key={item.label}
-                  className={`${
-                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
-                  } border-b border-gray-300`}
+                  key={label}
+                  className={`${index % 2 === 0 ? "bg-gray-100" : "bg-white"} border-b border-gray-300`}
                 >
-                  <td className="py-3 px-3 font-bold">{item.label}:</td>
-                  <td className="py-3 px-3">{item.value}</td>
+                  <td className="py-3 px-3 font-bold">{label}:</td>
+                  <td className="py-3 px-3">
+                    {label === "ID" ? node.name :
+                      label === "Address" ? node.attributes?.Address?.slice(0, 6) + "..." + node.attributes?.Address?.slice(-6) :
+                      label === "Referrer" ? node.attributes?.Referrer || "N/A" :
+                      label === "Community" ? node.attributes?.TotalTeam || 0 :
+                      label === "Direct Team" ? node.attributes?.Team || 0 :
+                      label === "Activation Date" ? node.attributes?.Start || "N/A" :
+                      label === "Rank" ? LEVEL_NAMES1[node.attributes?.Rank] || "N/A" : ""
+                    }
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -88,7 +66,6 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
         </div>
       )}
 
-      {/* --- Avatar Node --- */}
       <div
         className="cursor-pointer flex flex-col items-center z-10"
         onClick={() => setSelectedNode(isSelected ? null : node)}
@@ -101,13 +78,9 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
         <p className="mt-1 text-xs bg-black text-white px-2 py-1 rounded shadow text-center break-all max-w-[80px]">
           {node.name}
         </p>
-
         {hasChildren && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded(!expanded);
-            }}
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
             className="bg-white text-black text-xs px-2 py-1 rounded mt-1 shadow"
           >
             {expanded ? "Collapse ▲" : "Tree ▼"}
@@ -115,20 +88,16 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
         )}
       </div>
 
-      {/* --- Vertical Line Below Avatar --- */}
       {(hasChildren || leftChild || rightChild) && expanded && (
         <div className="w-0.5 h-6 bg-blue-500" />
       )}
 
-      {/* --- Children Container --- */}
       {expanded && (
         <div className="flex relative justify-between gap-4 mt-2">
-          {/* Horizontal Line between children */}
           <div className="absolute top-2 left-0 right-0 h-1 border-t-4 border-blue-500 rounded-full" />
 
-          {/* Left Child */}
           <div className="flex flex-col items-center">
-            {leftChild ? (
+            {leftChild && (
               <>
                 <div className="w-0.5 h-6 bg-blue-500" />
                 <TreeNode
@@ -137,17 +106,11 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
                   setSelectedNode={setSelectedNode}
                 />
               </>
-            ) : (
-              <>
-                <div className="w-0.5 h-6 bg-blue-500" />
-                
-              </>
             )}
           </div>
 
-          {/* Right Child */}
           <div className="flex flex-col items-center">
-            {rightChild ? (
+            {rightChild && (
               <>
                 <div className="w-0.5 h-6 bg-blue-500" />
                 <TreeNode
@@ -155,11 +118,6 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
                   selectedNode={selectedNode}
                   setSelectedNode={setSelectedNode}
                 />
-              </>
-            ) : (
-              <>
-                <div className="w-0.5 h-6 bg-blue-500" />
-                
               </>
             )}
           </div>
@@ -169,69 +127,56 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
   );
 };
 
-    const CommunityTree = () => {
-      const [treeData, setTreeData] = useState(null);
-      const [userId, setUserId] = useState();
-      const [inputId, setInputId] = useState();
-      const [selectedNode, setSelectedNode] = useState(null);
-      const [walletAddress, setWalletAddress] = useState("");
-      const [loading, setLoading] = useState(false);
-    
-      // 🟡 1. Get wallet from localStorage
-      useEffect(() => {
-        const wallet = localStorage.getItem("wallet");
-        if (wallet) {
-          setWalletAddress(wallet);
-        }
-      }, []);
-    
-      // 🟢 2. Fetch userId from wallet
-      useEffect(() => {
-        if (walletAddress) {
-          fetchUserId(walletAddress);
-        }
-      }, [walletAddress]);
-    
-      const fetchUserId = async (wallet) => {
-        try {
-          const provider = new BrowserProvider(window.ethereum);
-          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-          const userId = await contract.id(wallet);
-          const uid = userId.toString();
-          setUserId(uid);           // ✅ Save it
-          setInputId(uid);          // ✅ Optional: set input ID also
-        } catch (error) {
-          console.error("Error fetching user ID:", error);
-        }
-      };
-    
-      // 🔵 3. Auto fetch tree once we have userId
-      useEffect(() => {
-        if (userId) {
-          handleSearch(userId);
-        }
-      }, [userId]);
-    
-      // 🟣 4. Tree fetcher
-      const handleSearch = async (e) => {
-        if (e?.preventDefault) e.preventDefault(); // prevent default form behavior
-        try {
-          const parsedId = Number(inputId);
-          if (isNaN(parsedId) || parsedId <= 0) {
-            console.warn("❌ Invalid UID:", inputId);
-            return;
-          }
-      
-          setLoading(true);
-          const data = await fetchUserTree(parsedId); // ✅ safe number
-          setTreeData(data);
-          setSelectedNode(data); // auto-select root node
-        } catch (error) {
-          console.error("Error fetching tree:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
+const CommunityTree = () => {
+  const [treeData, setTreeData] = useState(null);
+  const [userId, setUserId] = useState();
+  const [inputId, setInputId] = useState();
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const wallet = localStorage.getItem("wallet");
+    if (wallet) setWalletAddress(wallet);
+  }, []);
+
+  useEffect(() => {
+    if (walletAddress) fetchUserId(walletAddress);
+  }, [walletAddress]);
+
+  const fetchUserId = async (wallet) => {
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      const userId = await contract.id(wallet);
+      const uid = userId.toString();
+      setUserId(uid);
+      setInputId(uid);
+    } catch (error) {
+      console.error("Error fetching user ID:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (userId) handleSearch(userId);
+  }, [userId]);
+
+  const handleSearch = async (e) => {
+    if (e?.preventDefault) e.preventDefault();
+    try {
+      const parsedId = Number(inputId);
+      if (isNaN(parsedId) || parsedId <= 0) return;
+      setLoading(true);
+      const data = await fetchUserTree(parsedId);
+      setTreeData(data);
+      setSelectedNode(data);
+    } catch (error) {
+      console.error("Error fetching tree:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
 
   return (
@@ -320,11 +265,19 @@ Learn how to configure a non-root public URL by running `npm run build`.
         <h1 className="text-lime-500 font-bold text-2xl mb-4">Community Tree</h1>
         <div className="overflow-auto p-4 min-h-screen">
   <div className="flex justify-center">
+  {loading ? (
+  <div className="text-center text-white mt-4">
+    <p>🌳 Loading Community Tree...</p>
+  </div>
+) : (
+  treeData && (
     <TreeNode
       node={treeData}
       selectedNode={selectedNode}
       setSelectedNode={setSelectedNode}
     />
+  )
+)}
   </div>
 </div>
       </div>
