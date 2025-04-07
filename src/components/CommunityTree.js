@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { fetchUserTree } from "./getTreeData";
-import { motion } from "framer-motion";
 import { BrowserProvider, ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
 
@@ -10,7 +9,7 @@ const LEVEL_NAMES1 = [
   "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 
-const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
+const TreeNode = ({ node, selectedNode, setSelectedNode, userId, setInputId, handleSearch }) => {
   const [expanded, setExpanded] = useState(true);
   const modalRef = useRef();
 
@@ -30,6 +29,7 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
   }, [setSelectedNode]);
 
   if (!node) return null;
+  
 
   return (
     <div className="flex flex-col items-center relative text-white p-2 min-w-[80px]">
@@ -44,10 +44,7 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
           <table className="w-full border border-black rounded-md text-sm font-semibold">
             <tbody>
               {["ID", "Address", "Referrer", "Community", "Direct Team", "Activation Date", "Rank"].map((label, index) => (
-                <tr
-                  key={label}
-                  className={`${index % 2 === 0 ? "bg-gray-100" : "bg-white"} border-b border-gray-300`}
-                >
+                <tr key={label} className={`${index % 2 === 0 ? "bg-gray-100" : "bg-white"} border-b border-gray-300`}>
                   <td className="py-3 px-3 font-bold">{label}:</td>
                   <td className="py-3 px-3">
                     {label === "ID" ? node.name :
@@ -56,31 +53,53 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
                       label === "Community" ? node.attributes?.TotalTeam || 0 :
                       label === "Direct Team" ? node.attributes?.Team || 0 :
                       label === "Activation Date" ? node.attributes?.Start || "N/A" :
-                      label === "Rank" ? LEVEL_NAMES1[node.attributes?.Rank] || "N/A" : ""
-                    }
+                      label === "Rank" ? LEVEL_NAMES1[node.attributes?.Rank] || "N/A" : ""}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <button
+            onClick={() => setSelectedNode(null)}
+            className="mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-1 rounded-lg text-xs"
+          >
+            ✖ Close
+          </button>
         </div>
       )}
 
-      <div
-        className="cursor-pointer flex flex-col items-center z-10"
-        onClick={() => setSelectedNode(isSelected ? null : node)}
-      >
+      <div className="cursor-pointer flex flex-col items-center z-10 relative" onClick={() => setSelectedNode(isSelected ? null : node)}>
         <img
           src="/assets/communitytree_files/bnb.png"
           className="h-14 w-14 rounded-full border-4 border-white shadow-lg"
           alt="User"
         />
-        <p className="mt-1 text-xs bg-black text-white px-2 py-1 rounded shadow text-center break-all max-w-[80px]">
-          {node.name}
-        </p>
+         
+         <button
+  onClick={(e) => {
+    e.stopPropagation();
+    
+    const idMatch = node.name.match(/\d+/); // extract number
+    const parsedId = idMatch ? parseInt(idMatch[0]) : null;
+
+    console.log("✅ User ID Clicked:", parsedId);
+
+    if (!parsedId || parsedId === Number(userId)) return;
+
+    setInputId(parsedId);
+    setSelectedNode(null);
+    handleSearch(null, parsedId);
+  }}
+  className="mt-2 px-3 py-1 bg-gradient-to-r from-yellow-500 to-indigo-600 text-white rounded-full text-xs font-semibold shadow-md hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 ease-in-out"
+>
+  {node.name}
+</button>
         {hasChildren && (
           <button
-            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
             className="bg-white text-black text-xs px-2 py-1 rounded mt-1 shadow"
           >
             {expanded ? "Collapse ▲" : "Tree ▼"}
@@ -104,6 +123,9 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
                   node={leftChild}
                   selectedNode={selectedNode}
                   setSelectedNode={setSelectedNode}
+                  userId={userId}
+                  setInputId={setInputId}
+                  handleSearch={handleSearch}
                 />
               </>
             )}
@@ -117,6 +139,9 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
                   node={rightChild}
                   selectedNode={selectedNode}
                   setSelectedNode={setSelectedNode}
+                  userId={userId}
+                  setInputId={setInputId}
+                  handleSearch={handleSearch}
                 />
               </>
             )}
@@ -130,10 +155,11 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
 const CommunityTree = () => {
   const [treeData, setTreeData] = useState(null);
   const [userId, setUserId] = useState();
-  const [inputId, setInputId] = useState();
+  const [inputId, setInputId] = useState("");
   const [selectedNode, setSelectedNode] = useState(null);
   const [walletAddress, setWalletAddress] = useState("");
   const [loading, setLoading] = useState(false);
+  
 
   useEffect(() => {
     const wallet = localStorage.getItem("wallet");
@@ -158,14 +184,15 @@ const CommunityTree = () => {
   };
 
   useEffect(() => {
-    if (userId) handleSearch(userId);
+    if (userId) handleSearch(null, userId);
   }, [userId]);
 
-  const handleSearch = async (e) => {
+  const handleSearch = async (e, manualId = null) => {
     if (e?.preventDefault) e.preventDefault();
+    const parsedId = Number(manualId || inputId);
+    if (isNaN(parsedId) || parsedId <= 0) return;
+
     try {
-      const parsedId = Number(inputId);
-      if (isNaN(parsedId) || parsedId <= 0) return;
       setLoading(true);
       const data = await fetchUserTree(parsedId);
       setTreeData(data);
@@ -176,8 +203,6 @@ const CommunityTree = () => {
       setLoading(false);
     }
   };
-
-
 
   return (
 
@@ -247,7 +272,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
                 maxLength={7}
                 className="p-2 px-4 bg-white-700 bg-opacity-45 w-[100px] rounded text-sm"
                 placeholder="ID"
-                value={inputId}
+                value={inputId ?? ""} // Use nullish coalescing
                 onChange={(e) => setInputId(e.target.value)}
               />
               <button
@@ -261,26 +286,29 @@ Learn how to configure a non-root public URL by running `npm run build`.
         </div>
       </div>
 
-      <div className="flex flex-col items-center mt-4 w-full p-4 overflow-x-auto min-h-screen">
-        <h1 className="text-lime-500 font-bold text-2xl mb-4">Community Tree</h1>
-        <div className="overflow-auto p-4 min-h-screen">
-  <div className="flex justify-center">
-  {loading ? (
-  <div className="text-center text-white mt-4">
-    <p>🌳 Loading Community Tree...</p>
-  </div>
-) : (
-  treeData && (
-    <TreeNode
-      node={treeData}
-      selectedNode={selectedNode}
-      setSelectedNode={setSelectedNode}
-    />
-  )
-)}
+      <div className="w-full overflow-x-auto min-h-screen p-4">
+  <h1 className="text-lime-500 font-bold text-2xl mb-4 text-center">Community Tree</h1>
+
+  <div className="min-w-[1000px] flex justify-center">
+    {loading ? (
+      <div className="text-center text-white mt-4">
+        <p>🌳 Loading Community Tree...</p>
+      </div>
+    ) : (
+      treeData && (
+        <TreeNode
+          node={treeData}
+          selectedNode={selectedNode}
+          setSelectedNode={setSelectedNode}
+          userId={userId}
+          setInputId={setInputId}
+          handleSearch={handleSearch}
+        />
+      )
+    )}
   </div>
 </div>
-      </div>
+
     </div>
     </div>
   </div>

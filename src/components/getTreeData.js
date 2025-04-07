@@ -13,7 +13,7 @@ const safeStringify = (obj, space = 2) => {
   }, space);
 };
 
-export const fetchUserTree = async (userId, depth = 3, level = 0) => {
+export const fetchUserTree = async (userId, depth = 2, level = 0) => {
   try {
 
     if (typeof userId !== "number" || isNaN(userId) || userId <= 0) {

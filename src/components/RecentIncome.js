@@ -6,129 +6,38 @@ const LEVEL_NAMES1 = [
   "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 
-const RecentIncome = () => {
-  const [walletAddress, setWalletAddress] = useState("");
-  const [userId, setUserId] = useState(0);
-  const [incomeData, setIncomeData] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // ✅ Load Wallet Address from Local Storage
-  useEffect(() => {
-    const wallet = localStorage.getItem("wallet");
-    if (wallet) {
-      setWalletAddress(wallet);
-    }
-  }, []);
+const RecentIncome = ({ userId }) => {
+  const [incomeList, setIncomeList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // ✅ Get User ID from Smart Contract
-  useEffect(() => {
-    if (walletAddress) {
-      getUserData(walletAddress);
-    }
-  }, [walletAddress]);
-
-  const getUserData = async (wallet) => {
-    try {
-      const provider = new BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-      const userId = await contract.id(wallet);
-      setUserId(userId.toString()); // ✅ Convert BigInt to string
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  };
-
-  // ✅ Fetch Income Data when userId is available
-  useEffect(() => {
-    if (userId) {
-      fetchIncomeData(userId);
-    }
-  }, [userId]);
-
-  const fetchIncomeData = async (userId) => {
+  const fetchIncomeData = async () => {
     try {
       setLoading(true);
       const provider = new BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-      console.log("Fetching income data for User ID:", userId);
-      const result = await contract.getIncome(userId);
-      console.log("Raw Data from Contract:", result);
-
-      const activityResult = await contract.getRecentActivities(150);  // Get last 50 activities
-      console.log("Raw Activity Data:", activityResult);
-
-
-
-      if (!result || !Array.isArray(result)) {
-        console.log("Invalid Data Format");
-        setIncomeData([]);
-        return;
-      }
-
-
-      if (!activityResult || !Array.isArray(activityResult)) {
-        console.log("Invalid Activity Data Format");
-        setIncomeData([]);
-        return;
-      }
-
-
-      const formattedData = result.map((entry) => {
-        // Find corresponding activity using ID
-        const activity = activityResult.find((act) => {
-          const activityId = act[0]?.toString(); // act[0] = id
-          return activityId === entry.id.toString();
-        });
+      const data = await contract.getIncome(userId);
       
-        const level = activity ? activity[2]?.toString() : "0"; // act[2] = level
-      
-        return {
-          id: entry.id.toString(),
-          layer: entry.layer.toString(),
-          amount: ethers.formatUnits(entry.amount, "ether"),
-          time: Number(entry.time), // Unix timestamp (for sorting)
-          formattedTime: new Date(Number(entry.time) * 1000).toLocaleString(), // Human-readable time
-          level: level,
-          type: getIncomeType(level),
-        };
-      }).sort((a, b) => b.time - a.time);
+      const formatted = data.map((item) => ({
+        from: item.id.toString(),
+        layer: item.layer.toString(),
+        amount: ethers.formatEther(item.amount),
+        timestamp: new Date(item.time.toNumber() * 1000).toLocaleString(),
+      }));
 
-
-      console.log("Formatted Data for Table:", formattedData);
-      setIncomeData(formattedData);
+      setIncomeList(formatted);
     } catch (error) {
-      console.error("Error fetching income data:", error);
+      console.error("Error fetching income:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUserLevel = async (userId) => {
-    try {
-      const provider = new BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-      
-      // Fetch user info from smart contract
-      const user = await contract.userInfo(userId);
-  
-      // Extract the level
-      return Number(user.level);
-    } catch (error) {
-      console.error("Error fetching user level:", error);
-      return 0; // Default to UNKNOWN if error occurs
-    }
-  };
+  useEffect(() => {
+    if (userId) fetchIncomeData();
+  }, [userId]);
 
-  
-
-  const getIncomeType = (level) => {
-    const activitylevel = Number(level); // ✅ Convert layer to number for strict comparison
-    if (activitylevel === 1) return "Direct Income";  // Agar layer 1 hai to Direct Income
-    if (activitylevel === 2 || activitylevel ===  3 || activitylevel === 4 || activitylevel === 5 || activitylevel === 6 || activitylevel === 7 || activitylevel === 8 || activitylevel === 9 || activitylevel === 10 || activitylevel === 11 || activitylevel === 12 ||activitylevel === 13 || activitylevel === 14 || activitylevel === 15 || activitylevel === 16 || activitylevel === 17   ) return "Upgrade Income";  // Agar layer 2 hai to Level Upgrade Income
-    return "Other Income"; // Default Case
-  };
   return (
 <>
   {/* saved from url=(0029)https://getrise.pro/dashboard */}
@@ -335,12 +244,18 @@ Learn how to configure a non-root public URL by running `npm run build`.
      
     
         <br></br>
+        <br></br>
         <h2 className="text-2xl font-bold text-yellow-500 mb-4 text-center">Recent Activities</h2>
 
         <div className="p-4">
 
       {/* Responsive Table Wrapper */}
       <div className="overflow-x-auto">
+      {loading ? (
+        <p className="text-center text-yellow-500">Loading income data...</p>
+      ) : incomeList.length === 0 ? (
+        <p className="text-center text-yellow-500">No income data found.</p>
+      ) : (
         <table className="min-w-max w-full border border-gray-300 shadow-lg rounded-lg overflow-hidden bg-black text-white">
           <thead>
             <tr className="bg-gradient-to-r from-yellow-500 to-yellow-500 text-black">
@@ -354,8 +269,8 @@ Learn how to configure a non-root public URL by running `npm run build`.
             </tr>
           </thead>
           <tbody>
-          {incomeData.length > 0 ? (
-            incomeData.map((row, index) => (
+          {incomeList.map((entry, index) => (
+
 
                 <tr
                   key={index}
@@ -364,23 +279,18 @@ Learn how to configure a non-root public URL by running `npm run build`.
                   } hover:bg-yellow-500 hover:text-black transition duration-200`}
                 >
                   <td className="border px-4 py-2">{index+1}</td>
-                  <td className="border px-4 py-2">{row.id}</td>
-                  <td className="border px-4 py-2">{row.amount}</td>
-                  <td className="border px-4 py-2">{row.type}</td>
-                  <td className="border px-4 py-2">{row.level || "UNKNOWN"}</td>
-                  <td className="border px-4 py-2">{row.layer}</td>
-                  <td className="border px-4 py-2">{row.formattedTime}</td>
+                  <td className="border px-4 py-2">{entry.from}</td>
+                  <td className="border px-4 py-2">{entry.amount}</td>
+                  <td className="border px-4 py-2">{entry.level}</td>
+                  <td className="border px-4 py-2">{entry.level || "UNKNOWN"}</td>
+                  <td className="border px-4 py-2">{entry.layer}</td>
+                  <td className="border px-4 py-2">{entry.timestamp}</td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" className="text-center py-4 text-gray-400">
-                  No recent activity found.
-                </td>
-              </tr>
-            )}
+                ))}
+             
           </tbody>
         </table>
+         )}
       </div>
      
     </div>
