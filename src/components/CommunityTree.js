@@ -1,80 +1,104 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { fetchUserTree } from "./getTreeData"; // Make sure this returns the proper nested data
 import { motion, AnimatePresence } from "framer-motion"; // Install this
 import { BrowserProvider, ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
-
+const LEVEL_NAMES1 = [
+  "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", 
+  "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
+];
 const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
   const [expanded, setExpanded] = useState(true);
+  const modalRef = useRef();
+
+  const isSelected = selectedNode?.name === node?.name;
+  const hasChildren = node?.children?.length > 0;
+
+  const leftChild = node?.children?.[0] || null;
+  const rightChild = node?.children?.[1] || null;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        setSelectedNode(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [setSelectedNode]);
+
   if (!node) return null;
 
-  const isSelected = selectedNode?.name === node.name;
-  const hasChildren = node.children?.length > 0;
-
-  // Ensure binary form (only 2 children max)
-  const leftChild = node.children?.[0] || null;
-  const rightChild = node.children?.[1] || null;
+  const LEVEL_NAMES1 = [
+    "Newbie",
+    "Associate",
+    "Executive",
+    "Manager",
+    "Director",
+    "VP",
+    "President",
+    "CEO",
+  ]; // replace with actual data if dynamic
 
   return (
     <div className="flex flex-col items-center relative text-white p-2 min-w-[80px]">
       {/* --- User Details Modal --- */}
       {isSelected && (
-        <div className="z-50 max-w-[92vw] sm:max-w-xs bg-white text-black shadow-2xl rounded-xl p-5 border border-gray-400 text-sm sm:text-base font-medium absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mt-2 overflow-y-auto max-h-[70vh] animate-fade-in">
+        <div
+          ref={modalRef}
+          className="z-50 bg-white text-black shadow-2xl rounded-xl p-5 border border-gray-400 text-sm font-medium absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mt-2 overflow-y-auto max-h-[70vh] animate-fade-in w-[90vw] max-w-[400px]"
+        >
           <h3 className="text-center font-bold mb-4 text-xl text-gray-800 border-b border-gray-300 pb-2">
             👤 User Details
           </h3>
-          <div className="w-full overflow-x-auto">
-            <table className="min-w-[300px] w-full border border-black rounded-md text-sm sm:text-base font-semibold">
-              <tbody>
-                {[
-                  { label: "ID", value: node.name },
-                  {
-                    label: "Address",
-                    value:
-                      node.attributes?.Address?.length > 15
-                        ? `${node.attributes.Address.slice(0, 6)}...${node.attributes.Address.slice(-6)}`
-                        : node.attributes?.Address || "N/A",
-                  },
-                  { label: "Referrer", value: node.attributes?.Referrer || "N/A" },
-                  { label: "Community", value: node.attributes?.TotalTeam || 0 },
-                  { label: "Direct Team", value: node.attributes?.Team || 0 },
-                  { label: "Activation Date", value: node.attributes?.Start || "N/A" },
-                ].map((item, index) => (
-                  <tr
-                    key={item.label}
-                    className={`${index % 2 === 0 ? "bg-gray-100" : "bg-white"} border-b border-gray-300`}
-                  >
-                    <td className="py-3 px-3 text-black font-bold whitespace-nowrap">{item.label}:</td>
-                    <td className="py-3 px-3 text-black break-words max-w-[220px] sm:max-w-[250px]" title={item.label === "Address" ? node.attributes?.Address : ""}>
-                      {item.value}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button
-            onClick={() => setSelectedNode(null)}
-            className="mt-5 w-full bg-red-600 hover:bg-red-700 text-black font-semibold py-2 rounded-lg text-base transition-all"
-          >
-            ❌ Close
-          </button>
+          <table className="w-full border border-black rounded-md text-sm font-semibold">
+            <tbody>
+              {[
+                { label: "ID", value: node.name },
+                {
+                  label: "Address",
+                  value:
+                    node.attributes?.Address?.length > 15
+                      ? `${node.attributes.Address.slice(0, 6)}...${node.attributes.Address.slice(-6)}`
+                      : node.attributes?.Address || "N/A",
+                },
+                { label: "Referrer", value: node.attributes?.Referrer || "N/A" },
+                { label: "Community", value: node.attributes?.TotalTeam || 0 },
+                { label: "Direct Team", value: node.attributes?.Team || 0 },
+                { label: "Activation Date", value: node.attributes?.Start || "N/A" },
+                {
+                  label: "Rank",
+                  value: LEVEL_NAMES1[node.attributes?.Rank] || "N/A",
+                },
+              ].map((item, index) => (
+                <tr
+                  key={item.label}
+                  className={`${
+                    index % 2 === 0 ? "bg-gray-100" : "bg-white"
+                  } border-b border-gray-300`}
+                >
+                  <td className="py-3 px-3 font-bold">{item.label}:</td>
+                  <td className="py-3 px-3">{item.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* --- Avatar --- */}
+      {/* --- Avatar Node --- */}
       <div
         className="cursor-pointer flex flex-col items-center z-10"
         onClick={() => setSelectedNode(isSelected ? null : node)}
       >
-        <div className="relative group">
-          <img
-            src="/assets/communitytree_files/bnb.png"
-            className="h-14 w-14 rounded-full border-4 border-white shadow-lg transition-transform group-hover:scale-110"
-            alt="User"
-          />
-        </div>
-        <p className="mt-1 text-xs text-white bg-black px-2 py-1 rounded shadow text-center max-w-[80px] break-all">
+        <img
+          src="/assets/communitytree_files/bnb.png"
+          className="h-14 w-14 rounded-full border-4 border-white shadow-lg"
+          alt="User"
+        />
+        <p className="mt-1 text-xs bg-black text-white px-2 py-1 rounded shadow text-center break-all max-w-[80px]">
           {node.name}
         </p>
 
@@ -84,51 +108,60 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
               e.stopPropagation();
               setExpanded(!expanded);
             }}
-            className="bg-white hover:bg-gray-100 text-black text-xs px-2 py-1 rounded mt-1 shadow"
+            className="bg-white text-black text-xs px-2 py-1 rounded mt-1 shadow"
           >
-            {expanded ? "Collapse ▲" : "Expand ▼"}
+            {expanded ? "Collapse ▲" : "Tree ▼"}
           </button>
         )}
       </div>
 
-      {/* --- Connecting Line + Children in Binary Format --- */}
-      {hasChildren && expanded && (
-        <div className="flex flex-col items-center mt-4 relative">
-          {/* Vertical Line */}
-          <div className="w-px h-6 bg-white" />
+      {/* --- Vertical Line Below Avatar --- */}
+      {(hasChildren || leftChild || rightChild) && expanded && (
+        <div className="w-0.5 h-6 bg-blue-500" />
+      )}
 
-          {/* Children in 2 columns (Left and Right) */}
-          <div className="flex justify-between items-start gap-10 relative mt-2">
-            {/* Horizontal line connecting children */}
-            <div className="absolute top-2 left-0 right-0 h-px bg-white" />
+      {/* --- Children Container --- */}
+      {expanded && (
+        <div className="flex relative justify-between gap-4 mt-2">
+          {/* Horizontal Line between children */}
+          <div className="absolute top-2 left-0 right-0 h-1 border-t-4 border-blue-500 rounded-full" />
 
-            {/* Left Child */}
-            <div className="flex flex-col items-center relative">
-              {leftChild && (
-                <>
-                  <div className="h-4 w-px bg-white mb-1" />
-                  <TreeNode
-                    node={leftChild}
-                    selectedNode={selectedNode}
-                    setSelectedNode={setSelectedNode}
-                  />
-                </>
-              )}
-            </div>
+          {/* Left Child */}
+          <div className="flex flex-col items-center">
+            {leftChild ? (
+              <>
+                <div className="w-0.5 h-6 bg-blue-500" />
+                <TreeNode
+                  node={leftChild}
+                  selectedNode={selectedNode}
+                  setSelectedNode={setSelectedNode}
+                />
+              </>
+            ) : (
+              <>
+                <div className="w-0.5 h-6 bg-blue-500" />
+                
+              </>
+            )}
+          </div>
 
-            {/* Right Child */}
-            <div className="flex flex-col items-center relative">
-              {rightChild && (
-                <>
-                  <div className="h-4 w-px bg-white mb-1" />
-                  <TreeNode
-                    node={rightChild}
-                    selectedNode={selectedNode}
-                    setSelectedNode={setSelectedNode}
-                  />
-                </>
-              )}
-            </div>
+          {/* Right Child */}
+          <div className="flex flex-col items-center">
+            {rightChild ? (
+              <>
+                <div className="w-0.5 h-6 bg-blue-500" />
+                <TreeNode
+                  node={rightChild}
+                  selectedNode={selectedNode}
+                  setSelectedNode={setSelectedNode}
+                />
+              </>
+            ) : (
+              <>
+                <div className="w-0.5 h-6 bg-blue-500" />
+                
+              </>
+            )}
           </div>
         </div>
       )}
@@ -142,8 +175,6 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
       const [inputId, setInputId] = useState();
       const [selectedNode, setSelectedNode] = useState(null);
       const [walletAddress, setWalletAddress] = useState("");
-      const [selectedLevel, setSelectedLevel] = useState(0);
-      const [matrixUsers, setMatrixUsers] = useState([]);
       const [loading, setLoading] = useState(false);
     
       // 🟡 1. Get wallet from localStorage
@@ -182,10 +213,17 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
       }, [userId]);
     
       // 🟣 4. Tree fetcher
-      const handleSearch = async (uid = inputId) => {
+      const handleSearch = async (e) => {
+        if (e?.preventDefault) e.preventDefault(); // prevent default form behavior
         try {
+          const parsedId = Number(inputId);
+          if (isNaN(parsedId) || parsedId <= 0) {
+            console.warn("❌ Invalid UID:", inputId);
+            return;
+          }
+      
           setLoading(true);
-          const data = await fetchUserTree(uid);
+          const data = await fetchUserTree(parsedId); // ✅ safe number
           setTreeData(data);
           setSelectedNode(data); // auto-select root node
         } catch (error) {
@@ -262,7 +300,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
             <div className="flex items-center gap-2 w-full justify-center">
               <input
                 maxLength={7}
-                className="p-2 px-4 bg-gray-700 bg-opacity-45 w-[100px] rounded text-sm"
+                className="p-2 px-4 bg-white-700 bg-opacity-45 w-[100px] rounded text-sm"
                 placeholder="ID"
                 value={inputId}
                 onChange={(e) => setInputId(e.target.value)}
