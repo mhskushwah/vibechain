@@ -1,6 +1,6 @@
 import { getContract } from "../blockchain/config";
 
-export const fetchUserTree = async (userId, depth = 3, level = 0) => {
+export const fetchUserTree = async (userId, depth = 2, level = 0) => {
   try {
     const contract = await getContract();
 
