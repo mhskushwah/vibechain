@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { fetchUserTree } from "./getTreeData"; // Make sure this returns the proper nested data
 import { motion, AnimatePresence } from "framer-motion"; // Install this
-
-
+import { BrowserProvider, ethers } from "ethers";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../blockchain/config";
 
 const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
   const [expanded, setExpanded] = useState(true);
@@ -135,25 +135,65 @@ const TreeNode = ({ node, selectedNode, setSelectedNode }) => {
     </div>
   );
 };
-const CommunityTree = () => {
-  const [treeData, setTreeData] = useState(null);
-  const [userId, setUserId] = useState();
-  const [inputId, setInputId] = useState();
-  const [selectedNode, setSelectedNode] = useState(null);
 
-  const handleSearch = async () => {
-    try {
-      const data = await fetchUserTree(inputId);
-      setUserId(inputId);
-      setTreeData(data);
-    } catch (error) {
-      console.error("Error fetching tree:", error);
-    }
-  };
-
-  useEffect(() => {
-    handleSearch(); // load default user tree on mount
-  }, []);
+    const CommunityTree = () => {
+      const [treeData, setTreeData] = useState(null);
+      const [userId, setUserId] = useState();
+      const [inputId, setInputId] = useState();
+      const [selectedNode, setSelectedNode] = useState(null);
+      const [walletAddress, setWalletAddress] = useState("");
+      const [selectedLevel, setSelectedLevel] = useState(0);
+      const [matrixUsers, setMatrixUsers] = useState([]);
+      const [loading, setLoading] = useState(false);
+    
+      // 🟡 1. Get wallet from localStorage
+      useEffect(() => {
+        const wallet = localStorage.getItem("wallet");
+        if (wallet) {
+          setWalletAddress(wallet);
+        }
+      }, []);
+    
+      // 🟢 2. Fetch userId from wallet
+      useEffect(() => {
+        if (walletAddress) {
+          fetchUserId(walletAddress);
+        }
+      }, [walletAddress]);
+    
+      const fetchUserId = async (wallet) => {
+        try {
+          const provider = new BrowserProvider(window.ethereum);
+          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+          const userId = await contract.id(wallet);
+          const uid = userId.toString();
+          setUserId(uid);           // ✅ Save it
+          setInputId(uid);          // ✅ Optional: set input ID also
+        } catch (error) {
+          console.error("Error fetching user ID:", error);
+        }
+      };
+    
+      // 🔵 3. Auto fetch tree once we have userId
+      useEffect(() => {
+        if (userId) {
+          handleSearch(userId);
+        }
+      }, [userId]);
+    
+      // 🟣 4. Tree fetcher
+      const handleSearch = async (uid = inputId) => {
+        try {
+          setLoading(true);
+          const data = await fetchUserTree(uid);
+          setTreeData(data);
+          setSelectedNode(data); // auto-select root node
+        } catch (error) {
+          console.error("Error fetching tree:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
 
   return (
