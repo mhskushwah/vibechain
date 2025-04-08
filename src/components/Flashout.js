@@ -1,147 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
-import { ethers } from "ethers";
+import React, { useEffect, useState } from "react";
+import { BrowserProvider, ethers, Contract } from "ethers";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "../blockchain/config";
 
-const CONTRACT_ADDRESS = "YOUR_SMART_CONTRACT_ADDRESS";  // 🔹 Replace with your contract address
-const ABI = [ 
-  // 🔹 यहां आपका Smart Contract ABI (Array) होगा
-];
+const Flashout = () => {
+  const [eligible, setEligible] = useState(false);
+  const [flashoutAmount, setFlashoutAmount] = useState(0);
+  const [deadline, setDeadline] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [claimed, setClaimed] = useState(null); // initialize
+  const [walletAddress, setWalletAddress] = useState("");
+    const [userId, setUserId] = useState(null);
+    const [timeLeft, setTimeLeft] = useState("");
 
 
 
-function RecentIncome() {
+    useEffect(() => {
+      const updateTimer = () => {
+        const now = new Date();
+        const midnight = new Date();
+        midnight.setHours(24, 0, 0, 0); // today at 12:00 AM (next day)
+        const diff = midnight - now;
+    
+        const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, "0");
+        const minutes = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, "0");
+        const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, "0");
+    
+        setTimeLeft(`${hours}:${minutes}:${seconds}`);
+      };
+    
+      updateTimer();
+      const interval = setInterval(updateTimer, 1000);
+      return () => clearInterval(interval);
+    }, []);
 
-const navigate = useNavigate(); // 🔹 Navigation Hook
-const [isClaimed, setIsClaimed] = useState(false); // Track if income is claimed or not
-  const [timeLeft, setTimeLeft] = useState(0); // Time left for the next claim
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false); // Track if button should be disabled
 
-  // Function to calculate the time left for the next claim
-  const calculateTimeLeft = () => {
-    const lastClaimTime = localStorage.getItem('lastClaimTime'); // Get last claim time from localStorage
-    const currentTime = Date.now();
-
-    // Check if a claim has been made today
-    if (lastClaimTime) {
-      const lastClaimDate = new Date(Number(lastClaimTime)); // Convert string to Date object
-      const lastClaimDay = new Date(lastClaimDate).setHours(0, 0, 0, 0); // Get start of the day for last claim
-      const currentDay = new Date(currentTime).setHours(0, 0, 0, 0); // Get start of the current day
-
-      // If the last claim was made today, calculate time left for the next claim
-      if (lastClaimDay === currentDay) {
-        // Calculate time remaining until 6 AM
-        const nextClaimTime = new Date(currentTime);
-        nextClaimTime.setHours(6, 0, 0, 0); // Set 6 AM of the current day
-
-        // If it's already past 6 AM, set the next claim time to 6 AM of the next day
-        if (currentTime > nextClaimTime.getTime()) {
-          nextClaimTime.setDate(nextClaimTime.getDate() + 1);
-        }
-
-        const remainingTime = nextClaimTime.getTime() - currentTime;
-        setTimeLeft(remainingTime > 0 ? remainingTime : 0);
-        setIsButtonDisabled(remainingTime > 0); // Disable button if 24 hours have not passed
-      } else {
-        setTimeLeft(86400000); // If it's a new day, allow claiming and reset timer
-        setIsButtonDisabled(false);
-      }
-    }
-  };
-
-  // Function to claim income
-  const claimIncome = () => {
-    if (isButtonDisabled) return;
-
-    // Mark the income as claimed
-    setIsClaimed(true);
-    alert('Income Claimed Successfully!');
-    // Save the current time as last claim time in localStorage
-    localStorage.setItem('lastClaimTime', Date.now());
-    setIsButtonDisabled(true); // Disable the button
-  };
-
-  // Function to update the countdown every second
-  useEffect(() => {
-    calculateTimeLeft();
-
-    // Update the time left every second
-    const intervalId = setInterval(() => {
-      if (timeLeft > 0) {
-        setTimeLeft(timeLeft - 1000);
-      }
-    }, 1000);
-
-    return () => clearInterval(intervalId); // Cleanup the interval on unmount
-  }, [timeLeft]);
-
-  // Format time left in hours, minutes, and seconds
-  const formatTimeLeft = () => {
-    const hours = Math.floor(timeLeft / 3600000);
-    const minutes = Math.floor((timeLeft % 3600000) / 60000);
-    const seconds = Math.floor((timeLeft % 60000) / 1000);
-    return `${hours}h ${minutes}m ${seconds}s`;
-  };
-
-  // Inline CSS styles
-  const styles = {
-    container: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      backgroundColor: 'transparent',
-      fontFamily: 'Arial, sans-serif',
-    },
-    heading: {
-      fontSize: '2.5rem',
-      color: '#fff',
-      marginBottom: '20px',
-    },
-    buttonContainer: {
-      marginTop: '20px',
-    },
-    claimButton: {
-      padding: '20px 40px',  // Increased button size
-      fontSize: '1.5rem',  // Larger font size
-      backgroundColor: 'rgba(76, 175, 80, 0.7)',  // Transparent green color
-      color: 'black',
-      border: '2px solidrgb(201, 181, 6)',  // Border color matching the background
-      borderRadius: '8px',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',  // Smooth transition for 3D effects
-      boxShadow: '0px 4px 6px rgba(124, 19, 19, 0.1)', // Add shadow for 3D effect
-      outline: 'none',  // Remove outline on focus
-    },
-    claimButtonHover: {
-      backgroundColor: 'rgba(76, 175, 80, 1)',  // Solid green color on hover
-      boxShadow: '0px 6px 10px rgba(0, 0, 0, 0.2)',  // Deeper shadow for hover effect
-      transform: 'translateY(-4px)',  // Button moves up slightly for a more 3D effect
-    },
-    disabledButton: {
-      backgroundColor: '#d3d3d3',
-      cursor: 'not-allowed',
-      boxShadow: 'none',  // No shadow when disabled
-    },
-    successMessage: {
-      marginTop: '20px',
-      fontSize: '1.5rem',
-      color: 'green',
-    },
-    mobileResponsive: {
-      '@media (max-width: 768px)': {
-        heading: {
-          fontSize: '2rem',
-        },
-        claimButton: {
-          padding: '15px 30px',  // Adjusted padding for mobile
-          fontSize: '1.2rem',
-        },
-      },
-    },
-  };
   
+    useEffect(() => {
+      const wallet = localStorage.getItem("wallet");
+      if (wallet) {
+        setWalletAddress(wallet);
+      }
+    }, []);
+  
+    useEffect(() => {
+      if (walletAddress) {
+        fetchUserId(walletAddress);
+      }
+    }, [walletAddress]);
+  
+    const fetchUserId = async (wallet) => {
+      try {
+        const provider = new BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const userId = await contract.id(wallet);
+        setUserId(userId.toString()); // Convert BigInt to string
+      } catch (error) {
+        console.error("Error fetching user ID:", error);
+      }
+    };
 
+
+  useEffect(() => {
+    init();
+  }, []);
+
+  async function init() {
+    try {
+      if (!window.ethereum) return alert("MetaMask required!");
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      const userId = await contract.id(address);
+      if (userId === 0n) return;
+
+      const user = await contract.userInfo(userId);
+      const flashout = await contract.flashoutIncome(userId);
+      const now = Math.floor(Date.now() / 1000);
+
+      console.log("userId:", userId.toString());
+      console.log("Level:", user.level.toString());
+      console.log("Direct Team:", user.directTeam.toString());
+      console.log("Flashout:", flashout.toString());
+
+      const isEligible =
+        Number(user.level) >= 10 &&
+        Number(user.directTeam) >= 2 &&
+        Number(flashout) > 0
+
+      if (isEligible) {
+        setEligible(true);
+        console.log("✅ Eligible user detected!");
+
+        setFlashoutAmount(Number(flashout));
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Init error:", err);
+      setLoading(false);
+    }
+  }
+
+  async function claimIncome() {
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract( CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      const userId = await contract.id(await signer.getAddress());
+
+      const tx = await contract.claimIncome(userId);
+      await tx.wait();
+
+      alert("✅ Claim successful!");
+      setEligible(false);
+    } catch (err) {
+      console.error("Claim failed:", err);
+      alert("❌ Claim failed");
+    }
+  }
+
+ 
   return (
 <>
   {/* saved from url=(0029)https://getrise.pro/dashboard */}
@@ -164,45 +144,115 @@ const [isClaimed, setIsClaimed] = useState(false); // Track if income is claimed
  
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root">
-    <div className="App">
-      <img
-        src="assets/RainBNB_files/bgimg.png"
-        className="fixed hidden md:block right-0 top-0 z-0 opacity-100 w-full h-full"
-      />
-      <img
-        src="assets/RainBNB_files/bgmobimg.png"
-        className="fixed w-full left-0 md:top-0 block md:hidden top-0 z-0 opacity-100"
-      />
-      
-      <div className="pb-4 text-black dark:text-white transition-colors duration-1000 min-h-screen relative">
+  <div className="App" style={{ position: "relative", minHeight: "100vh" }}>
+    
+    {/* Background Images */}
+    <img
+      src="assets/RainBNB_files/bgimg.png"
+      className="hidden md:block w-full h-full object-cover fixed top-0 left-0 z-0"
+      alt="Background"
+    />
+    <img
+      src="assets/RainBNB_files/bgmobimg.png"
+      className="block md:hidden w-full h-full object-cover fixed top-0 left-0 z-0"
+      alt="Mobile Background"
+    />
+
+    {/* Foreground Content */}
+    <div
+      style={{
+        position: "relative",
+        zIndex: 10,
+        padding: "40px",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        backdropFilter: "blur(5px)", // optional blur effect
+      }}
+    >
+      <h2
+        style={{
+          fontSize: "28px",
+          marginBottom: "20px",
+          color: "#fff",
+          textShadow: "2px 2px 10px rgba(0,0,0,0.5)",
+        }}
+      >
+        🚀 Flashout Reward
+      </h2>
+
+      {loading ? (
+        <p style={{ color: "white" }}>Checking eligibility...</p>
+      ) : eligible ? (
        
-        <div />
-        <div style={styles.container}>
-       <h1 style={styles.heading}>Claim Income</h1>
-      <div style={styles.buttonContainer}>
+        <>
+        <p style={{ color: "#fff", fontSize: "18px", marginBottom: "20px" }}>
+          🕒 Time left to claim: <strong>{timeLeft}</strong>
+        </p>
+       
         <button
           style={{
-            ...styles.claimButton,
-            ...(isButtonDisabled ? styles.disabledButton : {}),
+            padding: "15px 30px",
+            fontSize: "20px",
+            background:
+              "linear-gradient(135deg, #27ae60, #2ecc71)", // gradient green
+            color: "#fff",
+            border: "none",
+            borderRadius: "15px",
+            cursor: "pointer",
+            boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.3)",
+            transition: "transform 0.2s ease-in-out",
           }}
           onClick={claimIncome}
-          disabled={isButtonDisabled}
+          onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+          onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          {isButtonDisabled ? `Next claim in: ${formatTimeLeft()}` : 'Claim Income'}
+          💰 Claim Income
         </button>
-      </div>
+        </>
 
-      {isClaimed && <div style={styles.successMessage}>Income Claimed Successfully!</div>}
-    </div>
-     
-
-       
-      </div>
+      ) : (
+        <p style={{ color: "lightgray", fontWeight: "bold" }}>
+          You are not eligible to claim at this time.
+        </p>
+      )}
     </div>
   </div>
+</div>
 </>
 
   );
 }
 
-export default RecentIncome;
+
+const styles = {
+  container: {
+    textAlign: "center",
+    marginTop: "50px",
+    padding: "20px",
+    background: "#f0f9ff",
+    borderRadius: "15px",
+    boxShadow: "0 0 15px rgba(0,0,0,0.1)",
+    maxWidth: "500px",
+    margin: "50px auto"
+  },
+  title: {
+    color: "#2c3e50",
+    marginBottom: "30px"
+  },
+  button: {
+    padding: "15px 30px",
+    fontSize: "18px",
+    backgroundColor: "#27ae60",
+    color: "white",
+    border: "none",
+    borderRadius: "10px",
+    cursor: "pointer",
+    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+    transition: "0.3s ease"
+  }
+};
+
+export default Flashout;
