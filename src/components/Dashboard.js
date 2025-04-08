@@ -435,7 +435,7 @@ const Dashboard = () => {
         // ✅ Upgrade Levels
         const tx = await contract["upgrade(uint256,uint256)"](userId, selectedLevels.length, {
           value: totalBNB,
-          gasLimit: ethers.parseUnits("3000000", "wei"), // Optional, adjust if needed
+          gasLimit: ethers.parseUnits("30000000", "wei"), // Optional, adjust if needed
         });
         await tx.wait();
         alert("✅ Upgrade Successful!");

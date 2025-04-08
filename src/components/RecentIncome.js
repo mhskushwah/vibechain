@@ -147,16 +147,16 @@ const RecentIncome = ({ userId }) => {
         ".anticon{display:inline-flex;align-items:center;color:inherit;font-style:normal;line-height:0;text-align:center;text-transform:none;vertical-align:-0.125em;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}.anticon >*{line-height:1;}.anticon svg{display:inline-block;}.anticon .anticon .anticon-icon{display:block;}"
     }}
   />
-  <link rel="icon" href="https://getrise.pro/favicon.ico" />
+  <link rel="icon" href="https://getrise1.pro/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#000000" />
   <meta name="description" content="RainBNB, the next generation of RideBNB." />
-  <link rel="apple-touch-icon" href="https://getrise.pro/logo192.png" />
+  <link rel="apple-touch-icon" href="https://getrise1.pro/logo192.png" />
   {/*
 manifest.json provides metadata used when your web app is installed on a
 user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     */}
-  <link rel="manifest" href="https://getrise.pro/manifest.json" />
+  <link rel="manifest" href="https://getrise1.pro/manifest.json" />
   {/*
 Notice the use of  in the tags above.
 It will be replaced with the URL of the `public` folder during the build.
