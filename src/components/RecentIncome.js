@@ -7,9 +7,35 @@ const LEVEL_NAMES1 = [
 ];
 
 
-const RecentIncome = ({ userId }) => {
+const RecentIncome = () => {
   const [incomeList, setIncomeList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
+    const [userId, setUserId] = useState(null);
+  
+    useEffect(() => {
+      const wallet = localStorage.getItem("wallet");
+      if (wallet) {
+        setWalletAddress(wallet);
+      }
+    }, []);
+  
+    useEffect(() => {
+      if (walletAddress) {
+        fetchUserId(walletAddress);
+      }
+    }, [walletAddress]);
+  
+    const fetchUserId = async (wallet) => {
+      try {
+        const provider = new BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const userId = await contract.id(wallet);
+        setUserId(userId.toString()); // Convert BigInt to string
+      } catch (error) {
+        console.error("Error fetching user ID:", error);
+      }
+    };
 
   const fetchIncomeData = async () => {
     try {
@@ -23,7 +49,7 @@ const RecentIncome = ({ userId }) => {
         from: item.id.toString(),
         layer: item.layer.toString(),
         amount: ethers.formatEther(item.amount),
-        timestamp: new Date(item.time.toNumber() * 1000).toLocaleString(),
+        timestamp: new Date(Number(item.time) * 1000).toLocaleString(),
       }));
 
       setIncomeList(formatted);
