@@ -37,28 +37,48 @@ const RecentIncome = () => {
       }
     };
 
-  const fetchIncomeData = async () => {
-    try {
-      setLoading(true);
-      const provider = new BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-
-      const data = await contract.getIncome(userId);
-      
-      const formatted = data.map((item) => ({
-        from: item.id.toString(),
-        layer: item.layer.toString(),
-        amount: ethers.formatEther(item.amount),
-        timestamp: new Date(Number(item.time) * 1000).toLocaleString(),
-      }));
-
-      setIncomeList(formatted);
-    } catch (error) {
-      console.error("Error fetching income:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchIncomeData = async () => {
+      try {
+        setLoading(true);
+        const provider = new BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+    
+        const data = await contract.getIncome(userId);
+    
+        // Sort by time in descending order before formatting
+        const sortedData = [...data].sort((a, b) => Number(b.time) - Number(a.time));
+    
+        const formatted = await Promise.all(
+          sortedData.map(async (item) => {
+            const fromId = item.id.toString();
+            const layer = Number(item.layer);
+            const incomeType = layer === 1 ? "Direct Income" : "Upgrade Income";
+    
+            // Fetch the level of the user who generated the income
+            const fromUser = await contract.userInfo(item.id);
+            const level = fromUser.level.toString();
+            const levelName = LEVEL_NAMES1[Number(level)] || "UNKNOWN";
+    
+            return {
+              from: fromId,
+              layer: layer.toString(),
+              amount: ethers.formatEther(item.amount),
+              timestamp: new Date(Number(item.time) * 1000).toLocaleString(),
+              incomeType: incomeType,
+              level: levelName,
+            };
+          })
+        );
+    
+        setIncomeList(formatted);
+      } catch (error) {
+        console.error("Error fetching income:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    
 
   useEffect(() => {
     if (userId) fetchIncomeData();
@@ -307,8 +327,8 @@ Learn how to configure a non-root public URL by running `npm run build`.
                   <td className="border px-4 py-2">{index+1}</td>
                   <td className="border px-4 py-2">{entry.from}</td>
                   <td className="border px-4 py-2">{entry.amount}</td>
-                  <td className="border px-4 py-2">{entry.level}</td>
-                  <td className="border px-4 py-2">{entry.level || "UNKNOWN"}</td>
+                  <td className="border px-4 py-2">{entry.incomeType}</td>
+                  <td className="border px-4 py-2">{entry.level|| "UNKNOWN"}</td>
                   <td className="border px-4 py-2">{entry.layer}</td>
                   <td className="border px-4 py-2">{entry.timestamp}</td>
                 </tr>
