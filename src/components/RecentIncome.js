@@ -52,7 +52,7 @@ const RecentIncome = () => {
           sortedData.map(async (item) => {
             const fromId = item.id.toString();
             const layer = Number(item.layer);
-            const incomeType = layer === 1 ? "Direct Income" : "Upgrade Income";
+            const incomeType = layer === 1 ? "Direct Referral Income" : "Upgrade Income";
     
             // Fetch the level of the user who generated the income
             const fromUser = await contract.userInfo(item.id);
