@@ -212,8 +212,6 @@ const Dashboard = () => {
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
         const userId = await contract.id(wallet);
-        console.log("🔍 Wallet Address:", wallet);
-
         const user = await contract.userInfo(wallet); // Example: assuming your contract has users mapping
 
         console.log("👤 Full User Info:", user);
@@ -232,45 +230,45 @@ const Dashboard = () => {
   }, [walletAddress]);
 
   const checkUserRegistration = async (wallet) => {
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      try {
+          if (!window.ethereum) {
+              alert("🦊 Please install MetaMask!");
+              return false;
+          }
 
-      console.log("🔍 Checking registration for wallet:", wallet);
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-      const userId = await contract.id(wallet);
-      console.log("✅ Fetched User ID:", Number(userId));
+          // 🔹 Fetch User ID
+          const userId = await contract.id(wallet);
+          console.log("User ID:", Number(userId));
 
-      if (Number(userId) > 0) {
-        setIsRegistered(true);
-        setShowRegisterPopup(false);
-        return true;
+          if (Number(userId) > 0) {
+              setIsRegistered(true);
+              setShowRegisterPopup(false);
+              return true;
+          }
+
+          setIsRegistered(false);
+
+          // ✅ Get Referral ID
+          const urlParams = new URLSearchParams(window.location.search);
+          let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
+
+          if (!isNaN(refId) && Number(refId) > 0) {
+              localStorage.setItem("referrerId", refId);
+              console.log("Referral ID Set:", refId);
+              setShowRegisterPopup(true);
+          } else {
+              localStorage.removeItem("referrerId");
+          }
+          return false;
+      } catch (error) {
+          console.error("⚠️ Error checking registration:", error);
+          alert("❌ Error checking registration! Try again.");
+          return false;
       }
-
-      setIsRegistered(false);
-
-      // ✅ Handle Referral ID
-      const urlParams = new URLSearchParams(window.location.search);
-      let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
-
-      if (!isNaN(refId) && Number(refId) > 0) {
-        localStorage.setItem("referrerId", refId);
-        console.log("Referral ID Set:", refId);
-        setShowRegisterPopup(true);
-      } else {
-        localStorage.removeItem("referrerId");
-      }
-
-      return false;
-    } catch (error) {
-      console.error("⚠️ Error checking registration:", error);
-      alert("❌ Error checking registration! " + (error?.reason || error?.message || "Unknown error."));
-      return false;
-    }
   };
-
-
-
 
   const handleRegister = async () => {
       if (!window.ethereum) {
@@ -329,39 +327,7 @@ const Dashboard = () => {
       }
   };
 
-  useEffect(() => {
-    const handleAccountsChanged = async (accounts) => {
-        if (accounts.length === 0) {
-            // 🔴 No wallet connected → Logout user
-            setWalletAddress("");
-            setIsRegistered(false);
-            setUserId(null);
-            setUserData(null);
-            alert("Wallet disconnected! Please connect again.");
-        } else {
-            // 🟢 New wallet connected → Load everything
-            const newWallet = accounts[0];
-            setWalletAddress(newWallet);
 
-            // 🔄 Check registration and fetch user data again
-            const isRegistered = await checkUserRegistration(newWallet);
-            if (isRegistered) {
-                await fetchUserDetails(newWallet);  // Replace with your actual data fetch function
-            }
-        }
-    };
-
-    if (window.ethereum) {
-        window.ethereum.on("accountsChanged", handleAccountsChanged);
-    }
-
-    // 🧹 Cleanup event listener when component unmounts
-    return () => {
-        if (window.ethereum && window.ethereum.removeListener) {
-            window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
-        }
-    };
-}, []);
   
   
     const toggleLevel = (index) => {
