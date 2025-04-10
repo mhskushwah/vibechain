@@ -212,6 +212,8 @@ const Dashboard = () => {
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
         const userId = await contract.id(wallet);
+        console.log("🔍 Wallet Address:", wallet);
+
         const user = await contract.userInfo(wallet); // Example: assuming your contract has users mapping
 
         console.log("👤 Full User Info:", user);
@@ -230,45 +232,45 @@ const Dashboard = () => {
   }, [walletAddress]);
 
   const checkUserRegistration = async (wallet) => {
-      try {
-          if (!window.ethereum) {
-              alert("🦊 Please install MetaMask!");
-              return false;
-          }
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+      console.log("🔍 Checking registration for wallet:", wallet);
 
-          // 🔹 Fetch User ID
-          const userId = await contract.id(wallet);
-          console.log("User ID:", Number(userId));
+      const userId = await contract.id(wallet);
+      console.log("✅ Fetched User ID:", Number(userId));
 
-          if (Number(userId) > 0) {
-              setIsRegistered(true);
-              setShowRegisterPopup(false);
-              return true;
-          }
-
-          setIsRegistered(false);
-
-          // ✅ Get Referral ID
-          const urlParams = new URLSearchParams(window.location.search);
-          let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
-
-          if (!isNaN(refId) && Number(refId) > 0) {
-              localStorage.setItem("referrerId", refId);
-              console.log("Referral ID Set:", refId);
-              setShowRegisterPopup(true);
-          } else {
-              localStorage.removeItem("referrerId");
-          }
-          return false;
-      } catch (error) {
-          console.error("⚠️ Error checking registration:", error);
-          alert("❌ Error checking registration! Try again.");
-          return false;
+      if (Number(userId) > 0) {
+        setIsRegistered(true);
+        setShowRegisterPopup(false);
+        return true;
       }
+
+      setIsRegistered(false);
+
+      // ✅ Handle Referral ID
+      const urlParams = new URLSearchParams(window.location.search);
+      let refId = urlParams.get("ref") || localStorage.getItem("referrerId") || "0";
+
+      if (!isNaN(refId) && Number(refId) > 0) {
+        localStorage.setItem("referrerId", refId);
+        console.log("Referral ID Set:", refId);
+        setShowRegisterPopup(true);
+      } else {
+        localStorage.removeItem("referrerId");
+      }
+
+      return false;
+    } catch (error) {
+      console.error("⚠️ Error checking registration:", error);
+      alert("❌ Error checking registration! " + (error?.reason || error?.message || "Unknown error."));
+      return false;
+    }
   };
+
+
+
 
   const handleRegister = async () => {
       if (!window.ethereum) {
