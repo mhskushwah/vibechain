@@ -327,7 +327,39 @@ const Dashboard = () => {
       }
   };
 
+  useEffect(() => {
+    const handleAccountsChanged = async (accounts) => {
+        if (accounts.length === 0) {
+            // 🔴 No wallet connected → Logout user
+            setWalletAddress("");
+            setIsRegistered(false);
+            setUserId(null);
+            setUserData(null);
+            alert("Wallet disconnected! Please connect again.");
+        } else {
+            // 🟢 New wallet connected → Load everything
+            const newWallet = accounts[0];
+            setWalletAddress(newWallet);
 
+            // 🔄 Check registration and fetch user data again
+            const isRegistered = await checkUserRegistration(newWallet);
+            if (isRegistered) {
+                await fetchUserDetails(newWallet);  // Replace with your actual data fetch function
+            }
+        }
+    };
+
+    if (window.ethereum) {
+        window.ethereum.on("accountsChanged", handleAccountsChanged);
+    }
+
+    // 🧹 Cleanup event listener when component unmounts
+    return () => {
+        if (window.ethereum && window.ethereum.removeListener) {
+            window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        }
+    };
+}, []);
   
   
     const toggleLevel = (index) => {
