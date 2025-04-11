@@ -12,6 +12,36 @@ const RecentIncome = () => {
   const [loading, setLoading] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
     const [userId, setUserId] = useState(null);
+
+
+    useEffect(() => {
+              async function connectWallet() {
+                  if (window.ethereum) {
+                      try {
+                          const accounts = await window.ethereum.request({ method: "eth_accounts" });
+                          if (accounts.length > 0) {
+                              setWalletAddress(accounts[0]); // Update wallet address
+                          }
+                      } catch (error) {
+                          console.error("Wallet Connection Error:", error);
+                      }
+                  }
+              }
+        
+              connectWallet();
+        
+              // **Wallet change event listener**
+              if (window.ethereum) {
+                  window.ethereum.on("accountsChanged", (accounts) => {
+                      if (accounts.length > 0) {
+                          setWalletAddress(accounts[0]); // Update state when wallet changes
+                      } else {
+                          setWalletAddress(null);
+                      }
+                  });
+              }
+          }, []);
+        
         
         
              // Detect wallet connection change
