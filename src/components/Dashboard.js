@@ -1194,7 +1194,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
               <h4 className="font-bold">VIBE CHAIN Contract opbnb.bscscan</h4>
               <a
                 className="text-yellow-400 underline"
-                href="https://opbnbscan.com/address/0xE78A32C62e07AF39aBD11d56E00FB2bd11B7Aa3F"
+                href="https://opbnb.bscscan.com/address/0xE78A32C62e07AF39aBD11d56E00FB2bd11B7Aa3F"
                 target="_blank"
               >
                 (0xE78A32C6..........bd11B7Aa3F)
