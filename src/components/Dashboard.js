@@ -393,13 +393,15 @@ const Dashboard = () => {
     try {
         setLoading(true);
 
-        // 🛠️ Pehle user check karo
+        // ✅ Check if user is registered
         const isRegistered = await checkUserRegistered();
         if (!isRegistered) {
+            alert("❌ You are not registered. Please register first.");
             setLoading(false);
-            return; // ❌ Agar registered nahi hai toh upgrade nahi hoga
+            return;
         }
 
+        // ✅ Check if levels are selected
         if (selectedLevels.length === 0) {
             alert("⚠️ Please select at least one level to upgrade!");
             setLoading(false);
@@ -410,15 +412,15 @@ const Dashboard = () => {
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
+        // 💰 Calculate total amount + admin charges
         const totalAmount = selectedLevels.reduce((acc, idx) => acc + parseFloat(LEVELS[idx]), 0);
         const totalAdminCharge = selectedLevels.reduce((acc, idx) => {
             return acc + (parseFloat(LEVELS[idx]) * PERCENTS[idx]) / 100;
         }, 0);
-
         const finalAmount = totalAmount + totalAdminCharge;
         const totalBNB = ethers.parseEther(finalAmount.toString());
 
-        // 🔹 🛠️ Wallet Balance Check (Before Sending Transaction)
+        // 💼 Wallet balance check
         const walletAddress = await signer.getAddress();
         const balance = await provider.getBalance(walletAddress);
 
@@ -428,29 +430,37 @@ const Dashboard = () => {
             return;
         }
 
-        console.log(`Upgrading ${selectedLevels.length} levels for User ID: ${userId}`);
-        console.log(`Total Cost: ${ethers.formatEther(totalBNB)} BNB`);
-        console.log("🟢 Upgrading levels:", selectedLevels);
+        // 🧾 Debug logs
+        console.log("User ID:", userId);
+        console.log("Selected Levels:", selectedLevels);
+        console.log("Total Cost (BNB):", ethers.formatEther(totalBNB));
+        console.log("Calling upgrade...");
 
-        // ✅ Upgrade Levels
-        const tx = await contract["upgrade(uint256,uint256)"](userId, selectedLevels.length, {
-          value: totalBNB,
-          gasLimit: ethers.parseUnits("30000000", "wei"), // Optional, adjust if needed
+        // ✅ Final Transaction (auto gas)
+        const tx = await contract.upgrade(userId, selectedLevels.length, {
+            value: totalBNB,
         });
         await tx.wait();
+
         alert("✅ Upgrade Successful!");
         setSelectedLevels([]);
+
     } catch (error) {
         console.error("⚠️ Upgrade Error:", error);
-        if (error.message.includes("insufficient funds")) {
+
+        if (error?.message?.includes("insufficient funds")) {
             alert("❌ Upgrade Failed! You don't have enough BNB.");
+        } else if (error?.info?.error?.message) {
+            alert(`❌ ${error.info.error.message}`);
         } else {
-            alert("❌ Upgrade Failed! Please check the console for more details.");
+            alert(`❌ Upgrade Failed! ${error.message || error}`);
         }
+
     } finally {
         setLoading(false);
     }
 };
+
 
 
 
