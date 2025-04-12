@@ -9,9 +9,9 @@ import { useSearchParams } from "react-router-dom";
 /* global BigInt */
 
 const LEVELS = [
-  "0.004", "0.006", "0.012", "0.024", "0.048", "0.096", "0.192",
-  "0.384", "0.768", "1.536", "3.072", "6.144", "12.288", "24.576",
-  "49.152", "98.304", "196.608"
+  "0.0040", "0.0060", "0.0120", "0.0240", "0.0480", "0.0960", "0.1920",
+  "0.3840", "0.7680", "1.5360", "3.0720", "6.1440", "12.2880", "24.5760",
+  "49.1520", "98.3040", "196.6080"
 ];
 const LEVEL_NAMES = [
   "PLAYER","STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
@@ -20,7 +20,7 @@ const LEVEL_NAMES1 = [
   "UNKNOWN", "PLAYER", "STAR", "HERO", "EXPERT", "WINNER", "PROVIDER", "ICON", "BOSS", "DIRECTOR", "PRECIDENT", "COMMANDER", "REGENT", "LEGEND", "APEX", "INFINITY", "NOVA", "BLOOM"
 ];
 
-const PERCENTS = [ 10,5, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]; // Admin percentage
+const PERCENTS = [ 10, 5, 5, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]; // Admin percentage
 
 const Dashboard = () => {
     const [walletAddress, setWalletAddress] = useState("");
@@ -417,12 +417,16 @@ const Dashboard = () => {
         const totalAdminCharge = selectedLevels.reduce((acc, idx) => {
             return acc + (parseFloat(LEVELS[idx]) * PERCENTS[idx]) / 100;
         }, 0);
-        const finalAmount = totalAmount + totalAdminCharge;
+        const finalAmount = parseFloat((totalAmount + totalAdminCharge).toFixed(7));
         const totalBNB = ethers.parseEther(finalAmount.toString());
 
         // 💼 Wallet balance check
         const walletAddress = await signer.getAddress();
         const balance = await provider.getBalance(walletAddress);
+        console.log("User ID:", userId);
+        console.log("Selected Levels:", selectedLevels);
+        console.log("Total Cost (BNB):", ethers.formatEther(totalBNB));
+        console.log("Calling upgrade...");
 
         if (balance < totalBNB) {
             alert(`❌ Insufficient funds! You need at least ${ethers.formatEther(totalBNB)} BNB.`);
