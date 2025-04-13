@@ -889,7 +889,7 @@ Learn how to configure a non-root public URL by running `npm run build`.
                   DIRECTOR
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
-                  PRECIDENT
+                  PRESIDENT
                 </p>
                 <p className="text-center whitespace-nowrap border-2 border-[rgba(89,222,240,0.16)] text-white bg-[rgba(89,222,240,0.14)] rounded-lg font-semibold p-1 mt-2 px-4">
                   COMMANDER
